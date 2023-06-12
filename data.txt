@@ -1,0 +1,3915 @@
+在阅读此捕获之前，请先检查EasyEDA 文档格式。
+Content
+Overview
+General Document Format
+separator
+The file header head
+The canvas configuration canvas
+Primitive data shape
+Bounding box data BBox
+Layer configuration layers(PCB)
+元素的可选与显示配置objects(PCB)
+偏好设置preference(PCB)
+drc检测规则DRCRULE(PCB)
+自动布线规则routerRule(PCB)
+网络颜色netColors(PCB)
+仿真数据(波形图)waveForm
+图元格式
+原理图部分
+1.简单图元
+折线polyline
+导线wire
+总线bus
+多边形polygon
+矩形rect
+图片image
+圆circle
+椭圆ellipse
+直线line
+路径path
+圆弧arc
+文本annotation
+表格图片pimage
+2.复杂图元
+引脚pin
+连接点junction
+标识符netflag
+网络标签netlabel
+总线分支busentry
+箭头arrowhead
+无连接标志noconnectflag
+3.特殊图元
+形状SHEET
+器件schlib
+PCB部分
+1.简单图元
+导线TRACK
+矩形RECT
+圆CIRCLE
+文本TEXT
+圆弧ARC
+2.复杂图元
+焊盘PAD
+过孔VIA
+通孔HOLE
+铺铜COPPERAREA
+实心填充SOLIDREGION
+尺寸DIMENSION
+量角器PROTRACTOR
+3.特殊图元
+形状SVGNODE
+内电层PLANEZONE
+封装FOOTPRINT
+图纸SHEET
+原理图文件格式
+PCB文件格式
+更新日志
+[TOC]
+
+Overview
+2020.08.11
+
+document formatis the standard version of EasyEDA of thefile source format, divided into two types:
+
++sch typedocument
++pcb typedocument
+
+The document is a string of the strict ‘JSON’ type. The following is explained in JSON formatby the different fields.
+
+The format of the two document types is very similar. The maindifference is the difference between theprimitive and some special attribute values. For the same part, please refer to theGeneral Document Formatsection.
+
+General Document Format
+Among different types of documents, some formats are common, or some are document-specific, as summarized below.
+
+separator
+//Compressed format separator
+var SP = '~',
+	SEG = '^^',
+	NEWLINE = '#@$',
+	PARASP = '`',//Separation marks for individual parameters para SP
+	SHEET = '#sheet#';//Load multiple files from the server, Eagle imports + netlistHandle
+The file header head
+Field name: ‘head’. Type Json, which contains the basic information for the entire document.
+
+Examples and data formats:
+
+{
+    "docType": "1",				// [Document Type] - string
+    "editorVersion": "6.3.0",	// [Document Version Number] - string
+    "c_para": {},				// [Custom attribute] - josn
+    "x": "4000",				// [Document the origin X coordinates] - string
+    "y": "3000",				// [Document the origin Y coordinates] - string
+    "hasIdFlag": true,			// [The component whether if binding with the library's uuid] - boolean
+    "newgId": true,				// [The component whether if has unique id] - boolean
+    "importFlag": 0,			// [Marking for importing eagle] - number
+    "transformList": "",		// [The offset data] - string(abandoned)
+    "c_spiceCmd": "",			// [Simulation command] - string(Only for schematic document)(abandoned)
+    "isSheet": true,			// [is drawing symbol or not] - boolean
+    "importedFrom": ''			// [importedFrom] - already abandoned
+}
+The canvas configuration canvas
+The field name: canvas, Type string, Use the separator ‘~’ to separate. Used to identify canvas related properties.
+
+for example:
+
+"CA~1000~1000~#000000~yes~#FFFFFF~10~1000~1000~line~0.5~mm~1~45~~0.5~4000~3000~0~none"
+Format specification:
+
+schematic:
+
+1.[CA]:  Fixed identity, canvas
+2.[viewWidth]:  The width attribute value of an SVG element, the larger the zoom, the larger the value. (Used in previous versions)
+3.[viewHeight]:  The height attribute value of an SVG element, the larger the zoom, the larger the value. (Used in previous versions)
+4.[backGround]:  background color
+5.[gridVisible]:  grid visible or not
+6.[gridColor]:  grid color
+7.[gridSize]:  grid size
+8.[canvasWidth]:  The logical width of the canvas, that is, the width in the SVG viewBox, does not change with ZOOM (used in previous versions)
+9.[canvasHeight]:  The logical height of the canvas, that is, the width in the SVG viewBox, does not change with ZOOM (used in previous versions)
+10.[gridStyle]: grid style
+11.[snapSize]:  snap size for snap
+12.[unit]:  unit
+13.[altSnapSize]:  snap size for ALT snap
+14.[originX]:  the origin X coordinates for canvas
+15.[originY]:  the origin Y coordinates for canvas
+pcb:
+
+1.[CA]:  Fixed identity, canvas
+2.[viewWidth]:  The width attribute value of an SVG element, the larger the zoom, the larger the value. (Used in previous versions)
+3.[viewHeight]:  The height attribute value of an SVG element, the larger the zoom, the larger the value. (Used in previous versions)
+4.[backGround]:  background color
+5.[gridVisible]:  grid visible or not
+6.[gridColor]:  grid color
+7.[gridSize]:  grid size
+8.[canvasWidth]:  The logical width of the canvas, that is, the width in the SVG viewBox, does not change with ZOOM (used in previous versions)
+9.[canvasHeight]:  The logical height of the canvas, that is, the width in the SVG viewBox, does not change with ZOOM (used in previous versions)
+10.[gridStyle]: grid style
+11.[snapSize]:  snap size for snap
+12.[unit]:  unit
+13.[routingWidth]:  routing width
+14.[routingAngle]:  routing Angle
+15.[copperAreaDisplay]:  copper area fill date visible or not
+16.[altSnapSize]:  snap size for ALT snap
+17.[originX]:  the origin X coordinates for canvas
+18.[originY]:  the origin Y coordinates for canvas
+19.[routeConflict]:  routing Conflict(Ignore | TrackAround | Block)
+20.[removeLoop]:  Whether to remove the loop
+Primitive data shape
+The field name:shape. String array type. Each piece of data corresponds to the compressed data of each graph element.
+
+The schematic contains data for rectangles, text, and ellipses
+
+for example:
+
+[
+    "R~440~300~~~50~110~#000000~1~0~none~gge5~0~",
+    "T~L~360~300~0~#0000FF~~9pt~~~~comment~Text~1~start~gge8~0~pinpart",
+    "E~410~355~10~25~#000000~1~0~none~gge12~0"
+]
+Refer to the single data structure of the primitive format: Primitive format.
+
+Bounding box data BBox
+field name BBOX. Type json. Box model data for the entire document.
+
+for example:
+
+{
+    "x": 4033.1,		// The abscissa of the upper left corner of the document canvas boundary
+    "y": 3282.1,		// The ordinate of the upper left corner of the document canvas boundary
+    "width": 113.3,		// Document canvas border width
+    "height": 147.8		// Document canvas border height
+}
+Layer configuration layers(PCB)
+The field name:layers. String array type. Layer configuration information is only in the PCB type document, The display and activation of layer tools are recorded.
+
+for example:
+
+[
+    "1~TopLayer~#FF0000~true~true~true~",
+    "2~BottomLayer~#0000FF~true~false~true~",
+    "3~TopSilkLayer~#FFCC00~true~false~true~",
+    "4~BottomSilkLayer~#66CC33~true~false~true~",
+    "21~Inner1~#999966~true~false~true~0~Plane",
+]
+数组中每条数据表示对应层的相关层信息，使用间隔符~分开，数据格式为：
+
+1.[layerid]：层的id标识
+2.[name]：层名称
+3.[color]：层颜色
+4.[visible]：层是否可见
+5.[active]：是否为当前激活层
+6.[config]：是否配置当前层
+7.[transparency]：层透明度
+8.[type]：层类型（内电层 | 信号层），内层专有配置
+元素的可选与显示配置objects(PCB)
+字段：objects。字符串数组类型。记录层工具的元素可选与显示设置信息（pcb类型文档专用）。
+
+示例：
+
+[
+    "All~true~false",
+    "Component~true~true",·
+    "Prefix~true~true",
+    "Name~true~false",
+    "Track~true~true",
+    "Pad~true~true",
+    "Via~true~true",
+    "Hole~true~true",
+    "Copper_Area~true~true",
+    "Circle~true~true",
+    "Arc~true~true",
+    "Solid_Region~true~true",
+    "Text~true~true",
+    "Image~true~true",
+    "Rect~true~true",
+    "Dimension~true~true",
+    "Protractor~true~true"
+]
+数据格式：
+
+1.[key]：元素关键字标识符（不能包含空格，会用_替换带有空格的key）
+2.[selected]：是否可选中
+3.[visible]：是否显示
+偏好设置preference(PCB)
+字段：preference。json类型。记录文档的一些偏好设置（pcb类型文档专用）。
+
+示例：
+
+{
+    "hideFootprints": "",
+    "hideNets": ""
+}
+drc检测规则DRCRULE(PCB)
+字段：DRCRULE。json类型。记录drc检测规则配置信息（pcb类型文档专用）。
+
+示例：
+
+{
+    "Default": {				// 默认配置
+      "trackWidth": 1,			// 线宽
+      "clearance": 0.6,			// 检测间距
+      "viaHoleDiameter": 2.4,	// 孔外径 
+      "viaHoleD": 1.2			// 孔内径
+    },
+    "isRealtime": false,				// 是否实时检测
+    "isDrcOnRoutingOrPlaceVia": false,	// 是否在布线与放置过孔时应用设计规则
+    "checkObjectToCopperarea": true,	//	是否检测元素到铺铜的距离
+    "showDRCRangeLine": true			// 是否在布线时显示DRC安全边界
+  }
+自动布线规则routerRule(PCB)
+字段：routerRule。json类型。记录布线规则的配置信息（pcb类型文档专用）。
+
+{
+    "unit": "mil",				// 单位
+    "trackWidth": 6,			// 线宽
+    "trackClearance": 6,		// 间距
+    "viaHoleD": 12,				// 孔内径
+    "viaDiameter": 24,			// 孔外径
+    "routerLayers": [			// 布线层配置
+      1,
+      2
+    ],
+    "smdClearance": 6,			// 贴片和器件的间距
+    "specialNets": [			// 特殊网络配置
+      {
+        "net": "AAA",			// 网络
+        "width": "15mil",		// 线宽
+        "clearance": "11mil"	// 间距
+      }
+    ],
+    "nets": [					// 所有网络
+      "AAA"
+    ],
+    "padsCount": 1,				// 焊盘数量
+    "skipNets": [],				// 忽略的网络配置
+    "realtime": true			// 实时检测
+}
+网络颜色netColors(PCB)
+字段：netColors。json类型。记录网络颜色配置信息（pcb类型文档专用）。
+
+示例：
+
+{
+    "DSA": {
+      "color": "#339933"
+    },
+    "FSADFDSA": {
+      "color": "#FF0000"
+    }
+}
+仿真数据(波形图)waveForm
+字段：waveForm。json字符串类型。仿真波形图专用字段，用于存储波形图数据。
+
+图元格式
+基础图元组合起来就是一个完整的器件（封装），比如最基本的矩形、圆这种简单图元，复杂一点的图元如引脚、网络标签、焊盘等。复杂图元其实也是简单基本图元组成的。
+
+原理图的基础图元和pcb的基础图元基本都不一致。
+
+两种文档类型的基础图元都有一种特殊图元，特殊图元独立存在，不再组成其他元素，比如原理图的schlib和pcb的FOOTPRINT，即原理图器件和pcb封装，这两种图元基本都由其他基础图元组成，但不允许有本身图元组成。
+
+数据类型：string。基本数据以分隔符~隔开。
+
+原理图部分
+1.简单图元
+折线polyline
+示例：
+
+"PL~230 290 430 180 550 340~#000000~1~0~none~gge5~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，默认为"PL"。
+2.[pointerStr]:折线polyline的points数据字符串
+3.[strokeColor]:线条颜色
+4.[strokeWidth]:线条宽度
+5.[strokeStyle]:线条样式
+6.[fillColor]:填充颜色
+7.[gId]:元素id
+8.[locked]:是否锁定
+导线wire
+示例：
+
+"W~495 -580 495 -475 580 -475~#008800~1~0~none~gge79~0"
+导线的数据格式除了首位标识符为W，其余结构同polyline一致。
+
+总线bus
+示例：
+
+"B~410 -565 400 -455~#008800~2~0~none~gge80~0"
+总线的数据格式除了首位标识符为B，其余结构同polyline一致。
+
+多边形polygon
+示例：
+
+"PG~290 260 340 350 440 230 390 200 390 200~#000000~1~0~none~gge5~0"
+多边形的数据格式除了首位标识符为PG，其余结构同polyline一致。
+
+矩形rect
+示例：
+
+"R~360~250~~~70~80~#000000~1~0~none~gge6~0~"
+数据格式：
+
+1.[cmdKey]：图元标识符，R
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[rx]：水平轴向的圆角半径尺寸
+5.[ry]：垂直轴向的圆角半径尺寸
+6.[width]：矩形宽度
+7.[height]：矩形高度
+8.[strokeColor]：线条颜色
+9.[strokeWidth]：线条宽度
+10.[strokeStyle]：线条样式
+11.[fillColor]：填充颜色
+12.[gId]：元素id
+13.[locked]：是否锁定
+14:[c_etype]:c_etype属性值（自定义的用于细分图元类型的属性）
+图片image
+示例：
+
+"I~360~290~104~26~0~data:image/png;base64,iVBORw......TkSuQmCC~gge11~0~"
+数据格式：
+
+1.[cmdKey]：图元标识符，I
+2.[x]：x坐标
+3.[y]：y坐标
+4.[width]：图片宽度
+5.[height]：图片高度
+6.[rotate]：旋转角度
+7.[href]：图片的数据信息
+8.[gId]：元素id
+9.[locked]：是否锁定
+10.[transform]：偏移属性
+圆circle
+注：新版本已弃用（椭圆可代替）。
+
+示例：
+
+"C~685~315~35~#000000~1~0~none~gge21~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，C
+2.[cx]：圆心x坐标
+3.[cy]：圆心y坐标
+4.[r]：半径
+5.[strokeColor]：线条颜色
+6.[strokeWidth]：线条宽度
+7.[strokeStyle]：线条样式
+8.[fillColor]：填充颜色
+9.[gId]：元素id
+10.[locked]：是否锁定
+椭圆ellipse
+示例：
+
+"E~420~295~40~25~#000000~1~0~none~gge22~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，E
+2.[cx]：圆心x坐标
+3.[cy]：圆心y坐标
+4.[rx]：x轴上椭圆的半径
+5.[ry]：y轴上椭圆的半径
+6.[strokeColor]：线条颜色
+7.[strokeWidth]：线条宽度
+8.[strokeStyle]：线条样式
+9.[fillColor]：填充颜色
+10.[gId]：元素id
+11.[locked]：是否锁定
+直线line
+示例：
+
+"L~0~470~-765~480~-775~gge105~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，L
+2.[x1]：起点横坐标
+3.[y1]：起点纵坐标
+4.[x2]：终点横坐标
+5.[y2]：终点纵坐标
+6.[strokeColor]：线条颜色
+7.[strokeWidth]：线条宽度
+8.[strokeStyle]：线条样式
+9.[fillColor]：填充颜色
+10.[gId]：元素id
+11.[locked]：是否锁定
+路径path
+示例：
+
+"PT~M370 280 C410 380 490 300 440 240~#000000~1~0~none~gge23~0~"
+数据格式：
+
+1.[cmdKey]：图元标识符，PT
+2.[pathString]：path路径
+3.[strokeColor]：线条颜色
+4.[strokeWidth]：线条宽度
+5.[strokeStyle]：线条样式
+6.[fillColor]：填充颜色
+7.[gId]：元素id
+8.[locked]：是否锁定
+圆弧arc
+示例：
+
+"A~M 459.9983 319.997 A 70 170 0 1 1 461.2807 267.9875~~#000000~1~0~none~gge26~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，A
+2.[pathString]：path路径
+3.[helperDots]：已移除，占位。
+4.[strokeColor]：线条颜色
+5.[strokeWidth]：线条宽度
+6.[strokeStyle]：线条样式
+7.[fillColor]：填充颜色
+8.[gId]：元素id
+9.[locked]：是否锁定
+文本annotation
+示例：
+
+"T~L~390~300~0~#0000FF~~9pt~~~~comment~Text~1~start~gge27~0~pinpart"
+数据格式：
+
+1.[cmdKey]：图元标识符，A
+2.[mark]：文本标记，可选值：L(普通文本) | N(器件名称) | P(器件编号) | PK(封装名)
+3.[x]：横坐标
+4.[y]：纵坐标
+5.[rotation]：旋转角度
+6.[fillColor]：填充颜色
+7.[fontFamily]：字体
+8.[fontSize]：文字大小
+9.[fontWeight]：文字粗细
+10.[fontStyle]：文字样式（自动 | 正常 | 斜体）
+11.[dominantBaseline]：文字的dominant-baseline属性
+12.[type]：文本类型（注释 | 仿真）
+13.[value]：文本值
+14.[visible]：是否可见
+15.[textAnchor]：文字的text-anchor属性
+16.[gId]：元素id
+17.[locked]：是否锁定
+18.[c_etype]：c_etype属性值（c_etype是自定义的用于细分图元类型的属性）
+表格图片pimage
+注：目前只用于表格内的图片，为了与普通图片做区分使用的一种新类型图元表示。
+
+示例：
+
+"Pimage~L~1~gge74~0~gge75~694.99995~-38~104~26~data:image/png;base64,iVBORw0KG......pCvHNepOOktyLeC61RcZ3JlkHPt9dXiX4IAntNzzH4CAAAAAElFTkSuQmCC"
+数据格式：
+
+1.[cmdKey]：图元标识符，Pimage
+2.[mark]：特殊标记（未使用）
+3.[visible]：是否可见（未使用）
+4.[locked]：是否锁定
+5.[imgid]：元素id
+6.[imgx]：x坐标
+7.[imgy]：y坐标
+8.[imgwidth]：图片宽度
+9.[imgheight]：图片高度
+10.[imghref]：图片base64数据信息
+2.复杂图元
+引脚pin
+注：引脚的数据格式使用了两种分隔符，外层整体数据使用^^，内层单一数据再使用~分隔。
+
+示例：
+
+"P~show~0~1~420~300~~gge31~0^^420~300^^M 420 300 h -20~#880000^^1~398~303~0~1~end~~~#0000FF^^1~405~299~0~1~start~~~#0000FF^^0~403~300^^0~M 400 297 L 397 300 L 400 303"
+数据格式：
+
+#1.[configure] - 配置信息
+1.[cmdKey]：图元标识符，P
+2.[dispaly]：是否显示
+3.[electric]：电气属性
+4.[spicePin]：仿真编号
+5.[x]：横坐标   //弃用，参考path
+6.[y]：纵坐标   //弃用，参考path
+7.[rotation]：旋转角度  
+8.[gId]：元素id
+9.[locked]：是否锁定
+
+#2.[pinDot] - 引脚吸附点(起点)信息
+1.[x]：起点横坐标   //弃用，参考path
+2.[y]：起点纵坐标   //弃用，参考path
+
+#3.[path] - 引脚路径信息
+1.[pathString]：路径数据
+2.[pinColor]：引脚颜色
+
+#4.[name] - 引脚名称信息
+1.[visible]：是否可见
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[rotation]：旋转角度
+5.[text]：文本值
+6.[textAnchor]：文字的text-anchor属性
+7.[fontFamily]：字体
+8.[fontSize]：文本大小
+9.[fillColor]：文本填充颜色
+
+#5.[num] - 引脚编号信息
+1.[visible]：是否可见
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[rotation]：旋转角度
+5.[text]：文本值
+6.[textAnchor]：文字的text-anchor属性
+7.[fontFamily]：字体
+8.[fontSize]：文本大小
+9.[fillColor]：文本填充颜色
+
+#6.[num] - 引脚终点信息
+1.[visible]： 终点是否可见
+2.[x]：终点横坐标
+3.[y]：终点纵坐标
+
+#7.[clock] - 引脚时钟信息
+1.[visible]： 时钟是否显示
+2.[pathString]：时钟路径信息
+连接点junction
+示例：
+
+"J~425~-170~2.5~#CC0000~gge130~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，J
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[r]：半径
+5.[fillColor]：填充颜色
+6.[gId]：元素id
+7.[locked]：是否锁定
+标识符netflag
+注：同引脚的数据格式类似，使用了两种分隔符，外层整体数据使用^^，内层单一数据再使用~分隔。
+
+示例：
+
+"F~part_netLabel_+5V~425~-170~270~gge124~~0^^425~-170^^+5V~#000000~435.5~-166~0~start~1~Times New Roman~9pt~gge126^^PL~435 -170 425 -170~#000000~1~0~none~gge128~0^^PL~435 -175 435 -165~#000000~1~0~transparent~gge129~0"
+数据格式：
+
+#1.[configure] - 配置信息
+1.[cmdKey]：图元标识符，F
+2.[partId]：标识符类型以及文本信息
+3.[x]：横坐标
+4.[y]：纵坐标
+5.[rotation]：旋转角度
+6.[gId]：元素id
+7.[transform]：偏移信息（旧版本）
+8.[locked]：是否锁定
+
+#2.[pinDot] - 吸附点信息
+1.[x]：吸附点横坐标
+2.[y]：吸附点纵坐标
+
+#3.[mark] - 标识符文本信息
+1.[netFlagString]：文本值
+2.[fillColor]：填充颜色
+3.[x]：横坐标
+4.[y]：纵坐标
+5.[rotation]：旋转角度
+6.[textAnchor]：文字的text-anchor属性
+7.[visible]：是否可见
+8.[fontFamily]：字体
+9.[fontSize]：文本大小
+10.[gId]：文本元素id
+网络标签netlabel
+示例：
+
+"N~515~-430~0~#0000ff~netLabel1~gge78~start~517~-432.5~Times New Roman~7pt~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，N
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[rotation]：旋转角度
+5.[fillColor]：填充颜色
+6.[textAnchor]：文字的text-anchor属性
+7.[visible]：是否可见
+8.[fontFamily]：字体
+9.[fontSize]：文本大小
+10.[gId]：文本元素id
+总线分支busentry
+示例：
+
+"BE~0~495~-405~505~-415~gge78~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，BE
+2.[x1]：起点横坐标
+3.[y1]：起点纵坐标
+4.[x2]：终点横坐标
+5.[y2]：终点纵坐标
+6.[gId]：元素id
+7.[locked]：是否锁定
+箭头arrowhead
+示例：
+
+"AR~part_arrowhead~410~300~gge5~0~M 410 300 L 395 307.5 L 398.75 300 L 395 292.5 Z ~#000000~0~3~15"
+数据格式：
+
+1.[cmdKey]：图元标识符，AR
+2.[partType]：放置类型，固定为"part_arrowhead"
+3.[x]：横坐标
+4.[y]：纵坐标
+5.[gId]：文本元素id
+6.[rotation]：旋转角度
+7.[pathString]：箭头路径数据
+8.[fillColor]：填充颜色
+9.[locked]：是否锁定
+10.[arrowtype]：箭头类型（1 | 2 | 3）
+11.[arrowsize]：箭头尺寸
+无连接标志noconnectflag
+示例：
+
+"O~0~0~gge86~M-4 -4L4 4M4 -4L-4 4~#33cc33~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，O
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[gId]：文本元素id
+5.[pathString]：路径数据
+6.[strokeColor]：线条颜色
+7.[locked]：是否锁定
+3.特殊图元
+形状SHEET
+这里的形状可以理解为自由格式的组合，可以自定义数据格式，目前原理图没有使用入口，主要在pcb中使用，例如pcb文档中的图形，3D模型等都使用的svgnode图元进行构建。更多细节请参考基础图元格式 > PCB部分 > 特殊图元 > 形状svgnode。
+
+器件schlib
+原理图的schlib即原理图器件（库文件），库文件可以由其他图元组成，但不能由库本身组成库，原理图库只能放置在原理图中。
+
+在原理图中，schlib压缩数据同其他图元一样会放到shape字段下，schlib格式分为两部分组成：
+
+器件的头部数据：头部数据以分隔符~隔开。
+器件的内部图元数据：图元之间将会以分隔符#@$隔开。
+两部分数据再以分隔符号#@$隔开。
+
+示例：
+
+"LIB~0~0~package`R0201`nameAlias`Value(Ω)`BOM_Supplier Part``BOM_Supplier``Contributor`LCEDA_Lib`spicePre`R`spiceSymbolName`R_0201_US`BOM_Manufacturer Part``~~0~gge3fb2f834261e887c~b600ab0518154c0c9d2ed5ca96244c69~36be002046ee442daec3a30b0f22c9fe~0~~yes~yes#@$T~N~-5.96875~-8~0~#000080~Arial~~~~~comment~1k~1~start~gge167~0~#@$T~P~-5.96875~-17.15625~0~#000080~Arial~~~~~comment~R1~1~start~gge169~0~#@$PL~15 0 12 5~#A00000~1~0~none~gge171~0#@$PL~7 -5 2 5~#A00000~1~0~none~gge172~0#@$PL~12 5 7 -5~#A00000~1~0~none~gge173~0#@$P~show~0~2~20~0~0~gge174~0^^20~0^^M 20 0 h -5~#800^^0~11~0~0~2~end~~~#800^^0~19~-4~0~2~start~~~#800^^0~18~0^^0~M 15 -3 L 12 0 L 15 3#@$PL~-7 5 -12 -5~#A00000~1~0~none~gge181~0#@$PL~2 5 -2 -5~#A00000~1~0~none~gge182~0#@$PL~-2 -5 -7 5~#A00000~1~0~none~gge183~0#@$PL~-12 -5 -15 0~#A00000~1~0~none~gge184~0#@$P~show~0~1~-20~0~180~gge185~0^^-20~0^^M -20 0 h 5~#800^^0~-11~0~0~1~start~~~#800^^0~-19~-4~0~1~end~~~#800^^0~-18~0^^0~M -15 3 L -12 0 L -15 -3"
+数据格式：
+
+#1.[器件头部数据]
+1.[cmdKey]：图元标识符，LIB
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[c_para]：自定义属性
+5.[rotation]：旋转角度
+6.[importFlag：eagle导入标记
+7.[gId]：元素id
+8.[puuid]：绑定的pcb封装uuid
+9.[uuid]：器件的uuid
+10.[locked]：是否锁定
+11.[bind_pcb_id]：绑定的pcb封装的id（弃用）
+12.[convert_to_pcb]：是否更新到pcb
+13.[add_into_bom]：是否加入bom表单
+
+#2.[器件内部图元数据]：即其他基本图元的压缩格式。
+PCB部分
+1.简单图元
+导线TRACK
+示例：
+
+"TRACK~1~1~~4055.5 3348 4055.5 3346 4131.5 3270 4096 3270~gge5~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，TRACK
+2.[strokeWidth]:线宽
+3.[layerid]：所属层
+4.[net]：网络
+5.[pointArr]：坐标点数据
+6.[gId]：元素id
+7.[locked]：是否锁定
+矩形RECT
+示例：
+
+"RECT~4065.5~3293.25~63~45.5~1~gge6~0~0~~~~"
+数据格式：
+
+1.[cmdKey]：图元标识符，RECT
+2.[x]:横坐标
+3.[y]：纵坐标
+4.[width]：宽度
+5.[height]：高度
+6.[layerid]：所属层
+7.[gId]：元素id
+8.[locked]：是否锁定
+9.[strokeWidth]:线宽
+10.[fill]:填充颜色
+11.[transform]:偏移数据
+12.[net]：网络
+13.[c_etype]:c_etype属性值（自定义的用于细分图元类型的属性）
+圆CIRCLE
+示例：
+
+"CIRCLE~4193.5~3148~45.6426~1~1~gge5~0~~circle_gge8,circle_gge9"
+数据格式：
+
+1.[cmdKey]：图元标识符，CIRCLE
+2.[cx]：圆心x坐标
+3.[cy]：圆心y坐标
+4.[r]：半径
+5.[strokeWidth]：线宽
+6.[layerid]：所属层
+7.[gId]：元素id
+8.[locked]：是否锁定
+9.[net]：网络
+10.[transformarc]:由圆转换的两个半圆的id信息
+文本TEXT
+示例：
+
+"TEXT~L~4081~3306.5~0.8~0~0~1~~8~TEXT~M 4083.55 3298.44 L 4083.55 3306.07 M 4081 3298.44 L 4086.09 3298.44 M 4088.49 3298.44 L 4088.49 3306.07 M 4088.49 3298.44 L 4093.22 3298.44 M 4088.49 3302.07 L 4091.4 3302.07 M 4088.49 3306.07 L 4093.22 3306.07 M 4095.62 3298.44 L 4100.71 3306.07 M 4100.71 3298.44 L 4095.62 3306.07 M 4105.65 3298.44 L 4105.65 3306.07 M 4103.11 3298.44 L 4108.2 3298.44~~gge13~~0~pinpart"
+数据格式：
+
+1.[cmdKey]：图元标识符，TEXT
+2.[type]：文本标记，可选值：L(普通文本) | N(器件名称) | P(器件编号) | PK(封装名)
+3.[x]：横坐标   //弃用，参考pathStr
+4.[y]：纵坐标   //弃用，参考pathStr
+5.[strokeWidth]:线宽
+6.[rotation]：旋转角度    //弃用，参考pathStr
+7.[mirror]:是否镜像      //弃用，参考pathStr
+8.[layerid]：所属层
+9.[net]：网络
+10.[fontSize]：文字大小
+11.[text]：文本值        //弃用，参考pathStr
+12.[pathStr]：路径数据
+13.[display]：是否显示
+14.[gId]：元素id
+15.[fontFamily]：字体
+16.[locked]：是否锁定
+17.[c_etype]：c_etype属性值（c_etype是自定义的用于细分图元类型的属性）
+圆弧ARC
+示例：
+
+"ARC~1~1~~M 4108.3572 3265.4999 A 53.7587 53.7587 0 1 0 4130.4018 3353.4528~~gge16~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，ARC
+2.[strokeWidth]:线宽
+3.[layerid]：所属层
+4.[net]：网络
+5.[d]：路径数据
+6.[c_helper_dots]：辅助线路径数据
+7.[gId]：元素id
+8.[locked]：是否锁定
+2.复杂图元
+焊盘PAD
+示例：
+
+"PAD~ELLIPSE~4020~3308.5~6~6~11~~1~1.8~~0~gge5~0~~Y~0~~~4020,3308.5",
+数据格式：
+
+1.[cmdKey]：图元标识符，PAD
+2.[shape]：焊盘形状
+3.[x]：横坐标
+4.[y]：纵坐标
+5.[width]：宽度
+6.[height]：高度
+7.[layerid]：所属层
+8.[net]：网络
+9.[number]：编号
+10.[holeR]：孔直径
+11.[pointArr]：坐标点数据
+12.[rotation]：旋转角度
+13.[gId]：元素id
+14.[holeLength]：孔长度
+15.[slotPointArr]：孔的坐标点数据
+16.[plated]：是否金属化
+17.[locked]：是否锁定
+18.[pasteexpansion]：助焊扩展
+19.[solderexpansion]：阻焊扩展
+20.[holeCenter]：孔中心坐标
+过孔VIA
+示例：
+
+"VIA~4030~3308.5~2.4~~0.6~gge11~0",
+数据格式：
+
+1.[cmdKey]：图元标识符，VIA
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[diameter]：过孔直径
+5.[net]：网络
+6.[holeR]：过孔内径
+7.[gId]：元素id
+8.[locked]：是否锁定
+通孔HOLE
+示例：
+
+"HOLE~4041.5~3309~4~gge15~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，HOLE
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[holeR]：孔直径
+5.[gId]：元素id
+6.[locked]：是否锁定
+铺铜COPPERAREA
+示例：
+
+"COPPERAREA~1~1~GND~M 4055 3023.5 L 4055 3060.5 L 4060 3065.5 L 4108.5 3065.5 L 4115.5 3058.5 L4115.5,3025 L4114,3023.5 Z~1~solid~gge83~spoke~none~~0~~1~1~1~1~yes~0",
+数据格式：
+
+1.[cmdKey]：图元标识符，COPPERAREA
+2.[strokeWidth]：线宽
+3.[layerid]：所属层
+4.[net]：网络
+5.[pathStr]：路径数据
+6.[clearanceWidth]：间距
+7.[fillStyle]：填充样式
+8.[gId]：元素id
+9.[thermal]：焊盘连接方式（发散 | 直连）
+10.[keepIsland]：是否保留孤岛
+11.[compressData]：铺铜压缩数据
+12.[locked]：是否锁定
+13.[name]：名称
+14.[order]：顺序
+15.[gridTrackWidth]：网格线宽
+16.[gridClearance]：网格间距
+17.[toBoardOutline]：到边框间距
+18.[fabricationImprove]：是否制造优化
+19.[spoke_width]：发散线宽
+实心填充SOLIDREGION
+示例：
+
+"SOLIDREGION~1~~M 4012 3300.5 L 4012 3317.5 L 4019.5 3325 L 4034 3325 L 4040 3319 L 4040 3308 L 4031 3299 L4019.5,3299 L4018.5,3298 Z~solid~gge20~~~~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，SOLIDREGION
+2.[layerid]：所属层
+3.[net]：网络
+4.[pathStr]：路径数据
+5.[type]：类型
+6.[gId]：元素id
+7.[teardrop]：泪滴
+8.[targetPad]：目标焊盘
+9.[targetWire]：目标导线
+10.[locked]：是否锁定
+尺寸DIMENSION
+示例：
+
+"DIMENSION~12~M4015.9632,3321.9632L4038.4632,3299.4632M......M 4035.5 3296.5 4045.5342 3306.5342~gge21~~0~straight~0.4"
+数据格式：
+
+1.[cmdKey]：图元标识符，DIMENSION
+2.[layerid]：所属层
+3.[d]：路径数据
+4.[gId]：元素id
+5.[fontSize]：尺寸高度
+6.[locked]：是否锁定
+7.[measuring_type]：尺寸类型
+8.[font_width]：尺寸宽度
+量角器PROTRACTOR
+示例：
+
+"PROTRACTOR~12~M4051.5 3328 L4051.5 3299.4825M4051.5 3328...... L4069.39 3309.77 ~0.4~gge22~4.5~0~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，PROTRACTOR
+2.[layerid]：所属层
+3.[d]：路径数据
+4.[strokeWidth]：线宽
+5.[gId]：元素id
+6.[fontSize]：文字大小
+7.[precision]：精度
+8.[locked]：是否锁定
+3.特殊图元
+形状SVGNODE
+这里的形状可以理解为自由格式的组合，可以自定义数据格式，主要在pcb中使用，例如pcb文档中的图形，3D模型等都使用的svgnode图元进行构建。
+
+比如导入的图形：
+
+"SVGNODE~{\"gId\":\"gge65\",\"nodeName\":\"path\",\"nodeType\":1,\"layerid\":\"1\",\"attrs\":{\"d\":\"M 4002.49 2996.53 L 4001.2451 2998.03 L 3999.3676 2998.03 L 3997.49 2998.03 L 3997.49 2999.471 C 3997.49 3000.2635 3997.9693 3001.2082 3998.5551 3001.5703 L 3999.6203 3002.2286 L 3997.8946 3004.1354 L 3996.1689 3006.0423 L 3996.8233 3006.6967 L 3997.4777 3007.3511 L 3999.3405 3005.6653 L 4001.2032 3003.9795 L 4002.4599 3005.4938 L 4003.7166 3007.008 L 4004.6033 3006.46 C 4005.091 3006.1586 4005.49 3005.1083 4005.49 3004.126 L 4005.49 3002.34 L 4007.4981 3000.5227 L 4009.5062 2998.7054 L 4007.8431 2996.8677 C 4005.8255 2994.6383 4004.1478 2994.5324 4002.49 2996.53\",\"id\":\"gge65\",\"stroke\":\"none\",\"layerid\":\"1\"}}"
+数据格式：
+
+SVGNODE的格式由两部分组成，第一部分只有图元标识符”SVGNODE”，第二部分为形状的组成数据，数据格式为JSON数据字符串。
+
+内电层PLANEZONE
+示例：
+
+"PLANEZONE~21~GND~solid~planeL21B0#@$planeL21B0I0~M4342.5,3232 4342.5,3169 4420.5,3169 4420.5,3232zM4375.6222,3223.2077 4375.6314,3223.2077 4376.0759,3223.2015 4376.0852,3223.2012 4376.5294,3223.1869z"
+数据格式：
+
+压缩数据同其他图元一样会放到shape字段下，格式由两部分组成：
+
+内电层的基本信息：数据以分隔符~隔开。
+内电层路径数据：包含若干路径数据，数据以分隔符~隔开。
+两部分数据再以分隔符号#@$隔开。
+
+#1.[内电层基本信息]
+1.[cmdKey]：图元标识符，PLANEZONE
+2.[layerid]：所属层
+3.[net]：网络
+4.[fillStyle]：填充类型
+5.[gId]：元素id
+
+#2.[内电层路径数据]
+1.[gId]：路径元素id
+2.[pathStr]：路径数据
+封装FOOTPRINT
+pcbd的FOOTPRINT同原理图的schlib类似，即PCB库文件。库文件可以由其他图元组成，但不能由库本身组成库，pcb库只能放置在PCB中。
+
+在PCB中，FOOTPRINT压缩数据同其他图元一样会放到shape字段下，FOOTPRINT格式分为两部分组成：
+
+封装的头部数据：头部数据以分隔符~隔开。
+封装的内部图元数据：图元之间将会以分隔符#@$隔开。
+两部分数据再以分隔符号#@$隔开。
+
+示例：
+
+"LIB~4058.9147~3070~package`R0201`~~~gge929a3f9f08f43af9~1~b600ab0518154c0c9d2ed5ca96244c69~1565922186~0~#@$TEXT~N~4057.97~3060~0.6~0~~3~~4.5~1k~M 4057.97 3056.28 L 4058.38 3056.07 L 4058.99 3055.46 L 4058.99 3059.75 M 4060.34 3055.46 L 4060.34 3059.75 M 4062.39 3056.89 L 4060.34 3058.94 M 4061.16 3058.12 L 4062.59 3059.75~none~gge3~~0~#@$TEXT~P~4057.97~3067~0.6~0~~3~~4.5~R1~M 4057.97 3062.46 L 4057.97 3066.75 M 4057.97 3062.46 L 4059.81 3062.46 L 4060.42 3062.66 L 4060.63 3062.87 L 4060.83 3063.28 L 4060.83 3063.69 L 4060.63 3064.1 L 4060.42 3064.3 L 4059.81 3064.5 L 4057.97 3064.5 M 4059.4 3064.5 L 4060.83 3066.75 M 4062.18 3063.28 L 4062.59 3063.07 L 4063.21 3062.46 L 4063.21 3066.75~~gge5~~0~#@$TRACK~0.3937~3~~4056.5525 3068.5039 4058.521 3068.5039~gge7~0#@$TRACK~0.3937~3~~4056.5525 3068.5039 4056.5525 3071.4961~gge8~0#@$TRACK~0.3937~3~~4056.5525 3071.4961 4058.521 3071.4961~gge9~0#@$TRACK~0.3937~3~~4059.3084 3071.4961 4061.2769 3071.4961~gge10~0#@$TRACK~0.3937~3~~4061.2769 3068.5039 4061.2769 3071.4961~gge11~0#@$TRACK~0.3937~3~~4059.3084 3068.5039 4061.2769 3068.5039~gge12~0#@$PAD~RECT~4059.997~3070~1.1811~1.5748~1~R1_2~2~0~4059.4065 3069.2126 4060.5876 3069.2126 4060.5876 3070.7874 4059.4065 3070.7874~0~gge13~0~~Y~0~0~0.4~4059.9969,3070#@$PAD~RECT~4057.832~3070~1.1811~1.5748~1~R1_1~1~0~4057.2415 3069.2126 4058.4226 3069.2126 4058.4226 3070.7874 4057.2415 3070.7874~0~gge18~0~~Y~0~0~0.4~4057.8323,3070"
+数据结构：
+
+#1.[封装头部数据]
+1.[cmdKey]：图元标识符，LIB
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[c_para]：自定义属性
+5.[rotation]：旋转角度
+6.[importFlag：eagle导入标记
+7.[gId]：元素id
+8.[layerid]：所属层
+9.[uuid]：封装的uuid
+10.[utime]：更新时间
+11.[locked]：是否锁定
+12.[bind_sch_id]：绑定的原理图器件的id（弃用）
+
+#2.[封装内部图元数据]：即其他基本图元的压缩格式。
+图纸SHEET
+原理图的图纸是一种特殊的器件，PCB中的图纸也可以理解为特殊的封装，但PCB使用的单独的图元来表示PCB图纸，所以图纸的结构也同封装结构一致，分为两部分：
+
+图纸的头部数据：头部数据以分隔符~隔开。
+图纸的内部图元数据：图元之间将会以分隔符#@$隔开。
+两部分数据再以分隔符号#@$隔开。
+
+数据格式：
+
+#1.[图纸头部数据]
+1.[cmdKey]：图元标识符，SHEET
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[locked]：是否锁定
+5.[layerid]：所属层
+6.[gId]：元素id
+
+#2.[图纸内部图元数据]：即其他基本图元的压缩格式。
+原理图文件格式
+一个原理图可以包含多个图页，每个图页都可以作为一份独立原理图文档，所以这里的原理图可以理解为原理图工程，可以包含若干原理图页，在压缩格式中使用schematics字段来标识改工程下的所有原理图页，类型为JSON数组。
+
+示例如下：
+
+{
+  "editorVersion": "6.3.0",		// 版本号
+  "docType": "5",				// 文档类型
+  "title": "New Project",		// 文档标题
+  "description": "",			// 文档描述
+  "colors": {},					// 文档颜色配置（弃用）
+  "schematics": [
+    {
+      "docType": "1",
+      "title": "Sheet_1",
+      "description": "",
+      "dataStr": "{\"head\":{\"docType\":\"1\",\"editorVersion\":\"6.3.0\",\"newgId\":true,\"c_para\":{\"Prefix Start\":\"1\"},\"c_spiceCmd\":null},\"canvas\":\"CA~1000~1000~#FFFFFF~yes~#CCCCCC~5~1000~1000~line~5~pixel~5~0~0\",\"shape\":[\"LIB~0~-5~package`RES-ADJ-TH_3386P`BOM_Supplier Part``BOM_Supplier`LCSC`BOM_Manufacturer Part``nameAlias`Value`Contributor`LCEDA_Lib`BOM_value(Ω)`10K`spicePre`R`spiceSymbolName`R_3386P_US`~~0~gge348eb5222b2937f0~ce6e0cc9b0684cd986edbf86d7075dfd~e0b0d01b6e0d44dbab9db0ad79a427bc~0~~yes~yes#@$T~N~-9.15625~15.34375~0~#000080~Arial~~~~~comment~R_3386P_US~1~start~gge103~0~#@$T~P~-9.15625~7~0~#000080~Arial~~~~~comment~RP1~1~start~gge105~0~#@$P~show~0~2~0~-25~90~gge107~0^^0~-25^^M 0 -25 v 10~#880000^^0~3~-13~270~2~end~~~#0000FF^^0~-1~-20~270~2~start~~~#0000FF^^0~0~-18^^0~M -3 -15 L 0 -12 L 3 -15#@$E~11~-8~1~1~#A00000~1~0~none~gge114~0#@$PG~-2 -15 0 -11 2 -15~#880000~1~0~none~gge115~0#@$P~show~0~1~20~-5~0~gge116~0^^20~-5^^M 20 -5 h -10~#8D2323^^0~7~-2~0~1~end~~~#8D2323^^0~14~-6~0~1~start~~~#8D2323^^0~13~-5^^0~M 10 -8 L 7 -5 L 10 -2#@$P~show~0~3~-20~-5~180~gge123~0^^-20~-5^^M -20 -5 h 10~#8D2323^^0~-6~-2~0~3~start~~~#8D2323^^0~-14~-6~0~3~end~~~#8D2323^^0~-13~-5^^0~M -10 -2 L -7 -5 L -10 -8#@$PL~0 -15 0 -11~#880000~1~0~none~gge130~0#@$PL~9 -1 10 -5~#8D2323~1~0~none~gge131~0#@$PL~6 -9 9 -1~#8D2323~1~0~none~gge132~0#@$PL~4 -1 6 -9~#8D2323~1~0~none~gge133~0#@$PL~1 -9 4 -1~#8D2323~1~0~none~gge134~0#@$PL~-1 -1 1 -9~#8D2323~1~0~none~gge135~0#@$PL~-3 -9 -1 -1~#8D2323~1~0~none~gge136~0#@$PL~-6 -1 -3 -9~#8D2323~1~0~none~gge137~0#@$PL~-8 -9 -6 -1~#8D2323~1~0~none~gge138~0#@$PL~-10 -5 -8 -9~#8D2323~1~0~none~gge139~0\"],\"BBox\":{\"x\":-22,\"y\":-27,\"width\":70.4,\"height\":43.7},\"colors\":{}}"
+    },
+    {
+      "docType": "1",
+      "title": "Sheet_2",
+      "description": "",
+      "dataStr": "{\"head\":{\"docType\":\"1\",\"editorVersion\":\"6.3.0\",\"newgId\":true,\"c_para\":{\"Prefix Start\":\"1\"},\"c_spiceCmd\":null},\"canvas\":\"CA~1000~1000~#FFFFFF~yes~#CCCCCC~5~1000~1000~line~5~pixel~5~0~0\",\"shape\":[\"F~part_netLabel_netPort~15~0~0~gge78~~0^^15~0^^netPort1~#0000FF~-6.5~5~0~end~1~Times New Roman~8pt~gge80^^PL~15 0 10 5 -5 5 -5 -5 10 -5 15 0~#0000FF~1~0~transparent~gge82~0\"],\"BBox\":{\"x\":-44,\"y\":-5,\"width\":61,\"height\":12.7},\"colors\":{}}"
+    }
+  ]
+}
+PCB文件格式
+PCB不像原理图一样包含多页，所以PCB的文件格式和PCB库无结构上的差异。
+
+示例：
+
+{
+  "head": {
+    "docType": "3",
+    "editorVersion": "6.3.0",
+    "newgId": true,
+    "c_para": {},
+    "hasIdFlag": true
+  },
+  "canvas": "CA~1000~1000~#000000~yes~#FFFFFF~10~1000~1000~line~0.5~mil~1~45~~0.5~4087.5~3308.5~0~yes",
+  "shape": [
+    "TRACK~1~1~~4076.5 3290.5 4076.5 3296.5 4115.5 3335.5~gge5~0",
+    "PAD~ELLIPSE~4095~3304.5~6~6~11~~1~1.8~~0~gge6~0~~Y~0~~~4095,3304.5"
+  ],
+  "layers": [
+    "1~TopLayer~#FF0000~true~true~true~",
+    "2~BottomLayer~#0000FF~true~false~true~",
+    "3~TopSilkLayer~#FFCC00~true~false~true~",
+    "4~BottomSilkLayer~#66CC33~true~false~true~",
+    "5~TopPasteMaskLayer~#808080~true~false~true~",
+    "6~BottomPasteMaskLayer~#800000~true~false~true~",
+    "7~TopSolderMaskLayer~#800080~true~false~true~0.3",
+    "8~BottomSolderMaskLayer~#AA00FF~true~false~true~0.3",
+  ],
+  "objects": [
+    "All~true~false",
+    "Component~true~true",
+    "Prefix~true~true",
+    "Name~true~false",
+    "Track~true~true",
+    "Pad~true~true",
+    "Via~true~true",
+    "Hole~true~true",
+    "Copper_Area~true~true",
+    "Circle~true~true",
+    "Arc~true~true",
+    "Solid_Region~true~true",
+    "Text~true~true",
+    "Image~true~true",
+    "Rect~true~true",
+    "Dimension~true~true",
+    "Protractor~true~true"
+  ],
+  "BBox": {
+    "x": 4076.5,
+    "y": 3290.5,
+    "width": 39,
+    "height": 45
+  },
+  "preference": {
+    "hideFootprints": "",
+    "hideNets": ""
+  },
+  "DRCRULE": {
+    "Default": {
+      "trackWidth": 1,
+      "clearance": 0.6,
+      "viaHoleDiameter": 2.4,
+      "viaHoleD": 1.2
+    },
+    "isRealtime": false,
+    "isDrcOnRoutingOrPlaceVia": false,
+    "checkObjectToCopperarea": true,
+    "showDRCRangeLine": true
+  },
+  "netColors": {}
+}
+Content
+Content
+Content
+Common Information
+Example
+Schematic Example
+Schematic JSON File Source
+PCB Example
+PCB JSON File Source
+General File Struck
+Delimiter Mark
+~ (Tilde)
+`(Back Quote)
+^^(Double Circumflex)
+#@$(Octothorpe Ampersat Dollar)
+Document Type
+Canvas Coordinates
+SVG
+Q&A
+1. How to check the json file format
+EasyEDA Schematic File Format
+Head
+Head information for schematic and subckt.
+Head information for Schematic Symbol, Spice Symbol and Subpart
+Canvas
+Shapes
+Rectangle
+Polyline
+Path
+Arc
+Pie
+Bus Entry
+Image
+Polygon
+Line
+Circle
+Bus
+Pin
+Ellipse
+Arrowhead
+Annotations
+Netlabels
+Netflags
+Wire
+Junctions
+No Connect Flag
+Symbol
+strokeStyle
+Q&A
+1. Why don’t save the Wire, Annotion, netlabel, netflag to Shape field.
+EasyEDA PCB File Format
+Head
+Head information for PCB.
+Head information for PCB Footprint
+Parameters Dimensions
+Canvas
+System Color
+Layers config
+Preference
+DRC Rule
+Shapes
+Unit
+TRACK
+COPPERAREA
+RECT
+CIRCLE
+SOLIDREGION
+TEXT
+Arc
+PAD
+VIA
+HOLE
+DIMENSION
+Footprint
+EasyEDA Schematic File Object
+Rules
+JSON Keys
+itemOrder key
+Example
+File
+wire
+Symbol
+JSON example
+EasyEDA PCB File Object
+Rules
+JSON Keys
+itemOrder key
+Example
+File
+TRACK
+SIGNALS
+FOOTPRINT
+JSON example
+Content
+EasyEDA Schematic File Format
+Head
+Head information for schematic and subckt.
+Head information for Schematic Symbol, Spice Symbol and Subpart
+Canvas
+Shapes
+Rectangle
+Polyline
+Path
+Arc
+Pie
+Bus Entry
+Image
+Polygon
+Line
+Circle
+Bus
+Pin
+Ellipse
+Arrowhead
+Annotations
+Netlabels
+Netflags
+Wire
+Junctions
+No Connect Flag
+Symbol
+strokeStyle
+Q&A
+1. Why don’t save the Wire, Annotion, netlabel, netflag to Shape field.
+EasyEDA Schematic File Format
+Note: Schematic, Schematic Symbol, Spice Symbol, Subpart and Subckt are used the same file format. Please check Schematic JSON File Source out before keeping read.
+
+Head
+Head information for schematic and subckt.
+"head":"1~1.7.5~Author`Dillon`~TRAN`2u`2m`0`{AC`dec``0`0`{DC`0``0`0`{TF```"
+Format:
+
+document type :1
+document version: 1.7.5h
+custom attributes: key: value pairs, separate with , added via Add Parameter**
+
+spice simulation configure store, Now can set four types tran, AC, DC, TF, every type split with {. When opening the simulation dialog, these information will be listed in like below image
+
+Head information for Schematic Symbol, Spice Symbol and Subpart
+"head":"7~1.7.5~400~300~package`DIP08`nameDisplay`0`nameAlias`Model`Model`555`name`555`pre`U?`spicePre``Contributor`Dillon"
+Format:
+
+document type :7
+document version: 1.7.5
+origin x position. Reserved field, can’t be changeded
+origin y position. Reserved field, can’t be changeded
+custom attributes: key: value pairs, separate with `, added via Add new parameter.
+package: DIP08  
+nameDispaly: 0 (hide it is name when placed to schematic)  
+nameAlias: Model   
+name:555  
+pre:U? , when place to schematic, will be marked as U1, U2. subpart will be set as `U?.1`, `U?.2` etc.  
+spicePre:X, `X` stands for a subckt.  
+sourceId:xxxxxxxxx (just for schematic Lib and spice symbol)
+Place it to schematic canvas, it’s attributes will be looked like below image. The name field is alias as Model and it is invisible.
+
+
+
+Canvas
+"canvas":"CA~1200~1200~#FFFFFF~yes~#CCCCCC~10~1200~1200~line~10~pixel~5~400~300"
+Format:
+
+command: CA
+view box width: 1200, View Box Width / Canvas width = scaleX
+view box height: 1200,View Box Height / Canvas Height = scaleY
+back ground: #FFFFFF
+grid visible: yes/none
+grid color: #CCCCCC
+grid size: 10 pixel
+canvas width: 1200 pixel
+canvas height: 1200 pixel
+grid style: line/dot
+snap size: 10 pixel
+unit: pixel(Always pixel)
+ALT snap size:5 (Snap Size when pressing the ALT Key)
+origin x position
+origin y position
+Canvas setting image
+
+
+
+Shapes
+The shape is an array. EasyEDA store various shape in this field, they are different with a command which locate at the begin of the string.
+
+"shape":[
+    "PL~210 100 260 100~#000000~2~0~none~gge58",
+    "R~210~110~~~50~30~#000000~1~0~none~gge61",
+    "I~90~90~271~105~0~https://easyeda.com/assets/static/images/logo-140x39.png~gge62",
+    "PG~310 100 350 130 300 150 290 150 270 120~#000000~2~0~none~gge64",
+    "PT~M230 170 C270 200 270 170 240 150 240 150 240 150 240 150~#000000~2~0~none~gge65"
+]
+Rectangle
+"R~650~0~20~20~230~160~#FF0000~2~1~#9966FF~gge5"
+Format:
+
+Check Rect element of SVG out.
+
+command: R
+x: 650
+y: 0
+rx: 20
+ry: 20
+width: 230
+height: 160
+strokeColor: #FF0000
+strokeWidth: 2 //pixel
+strokeStyle: 1
+fillColor: #9966FF
+id: gge36
+locked:null
+Rect’s attributes and image looks like bellow image:
+
+Polyline
+"PL~610 130 780 130~#FF0000~5~0~none~gge6"
+Format:
+Check Polyline element of SVG out.
+
+command: PL
+points: 610 130 780 130
+strokeColor: #FF0000
+strokeWidth: 5 //pixel
+strokeStyle: 0
+fillColor: none
+id: gge6
+locked:null
+Polyline’s attributes and image looks like bellow image:
+
+Path
+"PT~M670 300 C830 370 850 230 920 300 920 300 920 300 920 300~#000000~1~0~none~gge17"
+Format:
+Check Path element of SVG out.
+
+command: PT
+pathString:M670 300 C830 370 850 230 920 300 920 300 920 300 920 300
+strokeColor: #FF0000
+strokeWidth: 5 //pixel
+strokeStyle: 0
+fillColor: none
+id: gge6
+locked:null
+Path’s attributes and image looks like bellow image:
+
+bezier is a path too.
+
+Arc
+"A~M 1020 60 A 80 80 0 0 1 953.096 199.904~968.78,121.45,1048.785,201.457,1018.785,61.457,948.785,221.45~#FF0000~3~0~none~gge19"
+
+Format:
+Arc is a Path element, Check Path element of SVG out.
+
+command: A
+pathString:M670 300 C830 370 850 230 920 300 920 300 920 300 920 300
+helperDots: the four green dots
+strokeColor: #FF0000
+strokeWidth: 3 //pixel
+strokeStyle: 0
+fillColor: none
+id: gge19
+locked:null
+ARC’s attributes and image looks like bellow image:
+
+
+Pie
+"PI~M 970 40 L 1189.9 34.4509 A 220 180 0 0 1 923.103 215.863 Z~970,40,1190,220,1327.7106323242188,30.973068237304688,923.1032104492188,215.86282348632812~#FF0000~3~0~#CCCCCC~gge22"
+Pie is a Path element, Check Path element of SVG out. Pie is similar with Arc, the pathString has a Z
+
+command: PI
+pathString:M 970 40 L 1189.9 34.4509 A 220 180 0 0 1 923.103 215.863 Z
+helperDots: the four green dots
+strokeColor: #FF0000
+strokeWidth: 3 //pixel
+strokeStyle: 0
+fillColor: none
+id: gge19
+locked:null
+Pie’s attributes and image looks like bellow image:
+
+picture 4
+Bus Entry
+"BE~0~660~150~670~140~gge15"
+Format:
+
+command: BE
+rotation:0
+start x1: 660
+start y1: 150
+end x1: 670
+end y1: 140
+id: gge15
+locked:null
+Bus Entry’s attributes and image looks like bellow image:
+
+picture 5
+Image
+"I~610~10~271~105~0~https://easyeda.com/assets/static/images/logo-140x39.png~gge12"
+Format:
+Check Image element of SVG out.
+
+command: I
+x: 610
+y: 10
+width: 271
+height: 105
+rotation: 0
+href:https://easyeda.com/assets/static/images/logo-140x39.png
+id: gge12
+locked:null
+Image’s attributes and image looks like bellow image:
+picture 6
+Polygon
+"PG~640 10 900 40 920 140 760 230 560 140~#FF0000~2~0~#00FF00~gge10"
+Format:
+Check Polygon element of SVG out.
+
+command: PG
+points: 640 10 900 40 920 140 760 230 560 140
+strokeColor: #FF0000
+strokeWidth: 2 //pixel
+strokeStyle: 0
+fillColor: #00FF00
+id: gge10
+locked:null
+Polygon’s attributes and image looks like bellow image:
+picture 7
+Line
+"L~360~160~510~160~#FF0000~2~0~none~gge11"
+Format:
+Check Line element of SVG out.
+
+command: L
+x1:360
+y1:160
+x2:510
+y2:160
+strokeColor: #FF0000
+strokeWidth: 2 //pixel
+strokeStyle: 0
+fillColor: #00FF00
+id: gge11
+locked:null
+Circle
+"C~710~170~105~#FF0000~2~0~#0000FF~gge12"
+Format:
+Check Circle element of SVG out.
+
+command: C
+cx:720
+cy:90
+r:105
+strokeColor: #FF0000
+strokeWidth: 2 //pixel
+strokeStyle: 0
+fillColor: #0000FF
+id: gge12
+locked:null
+Bus
+"B~570 130 680 130 680 210~#008800~2~0~none~gge19"
+Bus is similar with Polyline, Bus is start with B, polyline start with PL.
+
+Pin
+"P~show~0~1~670~30~~gge23^^670~30^^M 670 30 h -20~#880000^^1~648~33~0~1~end~~11pt^^1~655~29~0~1~start~~11pt^^0~653~30^^0~M 650 27 L 647 30 L 650 33"
+A Pin has seven segments, join these segments with ^^ (Double Circumflex) as a string like above.
+
+Pin configure P~show~0~1~670~30~~gge23
+command: P
+display: show/‘’ (bad design, should use yes/none)
+electric: 0, can be [‘Undefined’, ‘Input’,’Output’,’I/O’,’Power’]
+spice pin number: 1
+position x: 670
+position y: 30
+rotation: null, can be [‘null’ or 0, ‘90’, ‘180’, ‘270’]
+id: gge23
+locked: null
+pin dot 670~30
+The gray dot at the end of the Pin, it is important.
+
+pin dot x: 670
+pin dot y: 30
+pin path M 670 30 h -20~#880000
+
+path: M 670 30 h -20, a 20 pixel horizontal line start from pin dot
+pin color: #880000
+name 1~648~33~0~1~end~~11pt
+
+visible : 1/0 stand show or hide
+position x: 648
+position y: 33
+rotation: 0
+text: 1
+text anchor: end
+font family: null, default is Verdana
+font size: 11pt, default is 7pt
+number 1~655~29~0~1~start~~11pt
+
+the same as name above
+
+dot 0~653~30
+
+stands for not. a circle with radius in 3 pixel
+
+visible : 0/1 hide / show
+circle x: 653
+circle y: 30
+clock 0~M 650 27 L 647 30 L 650 33
+visible: 0/1 hide / show
+clock path: M 650 27 L 647 30 L 650 33
+Pin’s attributes and image looks like bellow image:
+
+
+Ellipse
+"E~720~90~105~65~#FF0000~2~0~#0000FF~gge12"
+Format:
+Check Ellipse element of SVG out.
+
+command: E
+cx:720
+cy:90
+rx:105
+ry:65
+strokeColor: #FF0000
+strokeWidth: 2 //pixel
+strokeStyle: 0
+fillColor: #0000FF
+id: gge12
+locked:null
+Ellipse’s attributes and image looks like bellow image:
+
+
+Arrowhead
+"AR~part_arrowhead~1060~120~gge23~180~M 1060 120 L 1063 126 L 1055 120 L 1063 114 Z~#FF0000"
+Format:
+
+command: AR
+part Type:part_arrowhead, not used
+x:1060
+y:120
+id:gge23
+rotation: 180
+path String: M 1060 120 L 1063 126 L 1055 120 L 1063 114 Z
+fillColor: #FF0000
+locked:null
+Arrow head’s attributes and image looks like bellow image:
+
+
+Annotations
+"T~L~540~60~0~#0000FF~~9pt~bold~normal~~comment~Text~1~start~gge26"
+Check Text element of SVG out.
+Format:
+
+command: T
+mark: L // L = label, N = Name, P = prefix N,P are for Symbol
+position x:540
+position y:60
+rotation:0
+fill color: #0000FF
+font family: null, default is Verdana
+font size: 9pt
+font-weight: bold
+font style: normal
+dominant baseline: null
+text type: comment // comment or spice command
+string: Text
+visible: 1/0 show/hide (use for mark N or P )
+text anchor: start (start middle end)
+id:gge26
+locked:null
+Text’s attributes and image looks like bellow image:
+
+
+Netlabels
+"N~360~100~0~#FF0000~VCC~gge32~start~362~100~Times New Roman~",
+Format:
+
+command: N
+pin dot x: 360
+pin dot y: 100
+rotation: 0
+fill color: #FF0000
+name: VCC
+id: gge32
+text anchor: start (start middle end)
+postion x: 362
+postion y: 100
+font family: Times New Roman
+font size:null default is 7pt
+locked:null
+netlabel’s attributes and image looks like bellow image:
+
+
+Netflags
+Netflag is very similar with netlabel
+
+"F~part_netLabel_gnD~330~110~~gge41^^330~110^^GND~#000080~319~97~0~start~0~Times New Roman~9pt^^PL~330 120 330 110~#000000~1~0~none~gge44^^PL~320 120 339 120~#000000~1~0~none~gge45^^PL~324 122 337 122~#000000~1~0~none~gge46^^PL~326 124 333 124~#000000~1~0~none~gge47^^PL~329 126 331 126~#000000~1~0~none~gge48",
+A Netflag has several segments, join these segments with ^^(Double Circumflex) as a string like above.
+
+configure P~show~0~1~670~30~~gge23
+
+command: F
+part id: part_netLabel_gnD
+position x: 330
+position y: 110
+rotation: null [0, 90, 180, 270]
+id: gge41,
+locked: null
+pin dot 670~30
+The gray dot at the end of the Pin, it is important.
+
+pin dot x: 330
+pin dot y: 140
+mark string GND~#000080~319~97~0~start~0~Times New Roman~9pt
+
+net flag string: GND
+color: #000080
+position x: 319
+position y: 97
+rotation: 0 [0, 90, 180, 270]
+text anchor: start (start middle end)
+visible: 1/0 show/hide the net flag string
+font family: Times New Roman
+font size:null default is 7pt
+shapes
+
+All other items are shapes.
+
+netflag’s attributes and image looks like bellow image:
+
+
+Wire
+"W~570 130 680 130 680 210~#008800~2~0~none~gge19"
+Wire is similar with Polyline, Wire is start with W, polyline start with PL.
+
+Junctions
+"J~420~140~2.5~#CC0000~gge18",
+Format:
+
+command: J
+pin dot x: 420
+pin dot y: 140
+junction circle radius: 2.5 pixel
+fill color: #CC0000
+id: gge18
+locked:null
+Junction’s attributes and image looks like bellow image:
+
+
+No Connect Flag
+"O~960~410~gge5~M956,406 L964,414 M964,406 L956,414~#FF0000"
+Format:
+
+command: O
+pin dot x: 960
+pin dot y: 410
+id: gge5
+pathStr: M956,406 L964,414 M964,406 L956,414
+color: #FF0000
+locked:null
+No Connect Flag’s attributes and image looks like bellow image:
+
+picture 8
+Symbol
+"LIB~220~140~package`C1`nameAlias`Value(F)`Value(F)`1u`spicePre`C`spiceSymbolName`Capacitor`~~0~gge66#@$T~N~214~129~0~#000080~Arial~~~~~comment~1u~1~start~gge68#@$T~P~214~120~0~#000080~Arial~~~~~comment~C1~1~start~gge69#@$PL~218 148 218 132~#A00000~1~0~none~gge70#@$P~show~0~1~200~120~180~gge71^^200~140^^M 210 140 h -10~#800^^0~214~140~0~1~start~~^^0~206~136~0~1~end~~^^^^#@$PL~230 140 222 140~#A00000~1~0~none~gge72#@$PL~222 132 222 148~#A00000~1~0~none~gge73#@$P~show~0~2~210~120~0~gge74^^240~140^^M 230 140 h 10~#800^^0~226~140~0~2~end~~^^0~234~136~0~2~start~~^^^^#@$PL~218 140 210 140~#A00000~1~0~none~gge75"
+A Symbol has several shapes, join these shapes with #@$(Octothorpe Ampersat Dollar) as a string like above.
+
+configure LIB~270~140~package`DO35-7`nameAlias`Model`Model`1N4001`spicePre`D`spiceSymbolName`Diode`~~0~gge116
+
+command: LIB
+position x: 270
+position y: 140
+[custom attributes]: package`DO35-7`nameAlias`Model`Model`1N4001`spicePre`D`spiceSymbolName`Diode`
+rotation: 0, can be [‘null’ or 0, ‘90’, ‘180’, ‘270’]
+import flag: 0 just used in import from eagle
+id: gge116
+locked: null
+shapes
+
+All other items are shapes.
+
+strokeStyle
+0 : solid
+1 : dashed
+2: dotted
+Q&A
+1. Why don’t save the Wire, Annotion, netlabel, netflag to Shape field.
+These items will be used to create netlist, save them to separate field will make you spent more less time to do this. We don’t need to traversal all the shapes.
+目录
+Content
+EasyEDA PCB File Format
+Head
+Head information for PCB.
+Head information for PCB Footprint
+Parameters Dimensions
+Canvas
+System Color
+Layers config
+Preference
+DRC Rule
+Shapes
+Unit
+TRACK
+COPPERAREA
+RECT
+CIRCLE
+SOLIDREGION
+TEXT
+Arc
+PAD
+VIA
+HOLE
+DIMENSION
+Footprint
+EasyEDA PCB File Format
+Note: PCB and PCB Footprint are used the same file format. Please check PCB JSON File Source out before keeping read.
+
+Head
+Head information for PCB.
+"head":"3~1.7.5~Author`Dillon`"
+Format:
+
+document type :3
+document version: 1.7.5
+custom attributes: key: value pairs, separate with `, added via Add new parameter
+
+Head information for PCB Footprint
+"4~1.7.5~400~300~`pre`U?`Contributor`Dillon"
+Format:
+
+document type :4
+document version: 1.7.5
+origin x position. Reserved field, can’t be changeded
+origin y position. Reserved field, can’t be changeded
+custom attributes: key: value pairs, separate with `, added via Add new parameter.
+pre:U? , when place to PCB, will be marked as U1, U2.
+Contributor:Dillon
+sourceId:xxxxxxxxx (just for Footprint)
+Parameters Dimensions
+EasyEDA support millimeter, inch and millimeter, but when these items are stored to a file, all of them will be expressed as 10X mil. Taking line lengths or widths for examples, stroke width equal 1, stands 10mil.
+
+Canvas
+"CA~2400~2400~#000000~yes~#FFFFFF~10~1200~1200~line~1~mil~1~45~visible~0.5~400~300"
+Format:
+
+command: CA
+view box width: 2400(24000 mil), View Box Width / Canvas width = scaleX = 2
+view box height: 2400(24000 mil),View Box Height / Canvas Height = scaleY = 2
+back ground: #000000
+grid visible: yes/none
+grid color: #FFFFFF
+grid size: 10(100 mil)
+canvas width: 1200 (12000 mil)
+canvas height: 1200 (12000 mil)
+grid style: line/dot
+snap size: 1 (10 mil)
+unit: mil(inch, mil, mm)
+routing width: 1 (10mil)
+routing angle: 45 degree( 45 90 free)
+copper area: visible/invisible
+ALT snap size: 0.5 ( 5 mil Snap Size when pressing the ALT Key)
+origin x position
+origin y position
+Canvas setting image
+
+
+
+System Color
+"#000000~#FFFFFF~#FFFFFF~#000000~#FFFFFF"
+Format:
+
+future use: #000000
+future use: #FFFFFF
+future use: #FFFFFF
+hole Color: #000000
+DRC error: #FFFFFF
+Layers config
+layers is an array, each layer is an item of the layers.
+
+ "layers":[
+	"1~TopLayer~#FF0000~true~true~true",
+	"2~BottomLayer~#0000FF~true~false~true",
+	"3~TopSilkLayer~#FFFF00~true~false~true",
+	"4~BottomSilkLayer~#808000~true~false~true",
+	"5~TopPasterLayer~#808080~false~false~false",
+	"6~BottomPasterLayer~#800000~false~false~false",
+	"7~TopSolderLayer~#800080~false~false~false",
+	"8~BottomSolderLayer~#AA00FF~false~false~false",
+	"9~Ratlines~#6464FF~true~false~true",
+	"10~BoardOutline~#FF00FF~true~false~true",
+	"11~Multi-Layer~#C0C0C0~true~false~true",
+	"12~Document~#FFFFFF~true~false~true",
+	"21~Inner1~#800000~false~false~false",
+	"22~Inner2~#008000~false~false~false",
+	"23~Inner3~#00FF00~false~false~false",
+	"24~Inner4~#000080~false~false~false"
+]
+Format:
+
+layer id: 1
+layer name: TopLayer
+layer color: #FF0000
+visible: true, hints the objects in this layer show or hide
+active: false. active layer
+config: true. if be set false, you can’t see it on the layer toolbar.
+Preference
+"preference":{
+    "hideFootprints":"gge118~gge221~gge227~gge233",
+    "hideNets":"BSYNC~DREQ~GPIO0~MICP~GND"
+}
+hideFootprints : when the id of the footprints in here, you can’t see them on canvas.
+hideNets : when the net name in here, you can’t see them on canvas, you can hide the ratline at here too. There are some guys would like to hide then GND ratline, then use copper area to connect all the GND pad.
+
+DRC Rule
+ "DRCRULE":{
+	"trackWidth":0.7,
+	"track2Track":0.7,
+	"pad2Pad":0.8,
+	"track2Pad":0.8,
+	"hole2Hole":1,
+	"holeSize":1.6
+}
+trackWidth: 0.7 (7 mil) track width
+track2Track: 0.7 (7 mil) track to track distance
+pad2Pad: 0.8(8 mil) pad to pad distance
+track2Pad: 0.8(8 mil) track to pad distance
+hole2Hole: 1(10 mil) hole to hole distance
+holeSize: 1.6(16 mil) hole diameter
+
+This is a simple DRC, more later.
+
+Shapes
+The shape is an array. EasyEDA store various shape in this field, they are different with a command which locate at the begin of the string.
+
+"shape":[
+    "TRACK~1~1~S$19~311 175 351 175 352 174~gge18",
+    "PAD~ELLIPSE~329~185~6~6~11~~1~1.8~~0~gge20",
+    "VIA~329~202~3.2~~0.8~gge23",
+    "COPPERAREA~2px~1~GND~349 247 492 261 457 314 339 329~1~solid~gge27~spoke~none~[]",
+    "SOLIDREGION~1~~350 146 483 146 447 228 371 220~solid~gge26"
+]
+Unit
+EasyEDA takes 10 mil as a basic factor, when a stroke width is 1, we can take it as 1*10mil = 10mil, is 2, we can take it as 2*10mil = 20mil
+
+TRACK
+"TRACK~1~1~S$8~311 175 351 175 352 174~gge18"
+Format:
+Check Polyline element of SVG out.
+
+command: TRACK
+stroke Width: 1 (10 mil)
+layer id: 1 (TopLayer)
+net: “S$8”
+points: 311 175 351 175 352 174
+id : gge18
+locked: null
+TRACK’s attributes and image looks like bellow image:
+
+
+COPPERAREA
+"COPPERAREA~2px~1~GND~349 247 492 261 457 314 339 329~1~solid~gge27~spoke~yes~[[\"M339,329 349,247 492,261 457,314z\"]]"
+Format:
+
+command: COPPERAREA
+stroke Width: 2 (20 mil)
+layer id: 1 (TopLayer)
+net: GND
+points: 349 247 492 261 457 314 339 329
+clearance Width : 1 (10 mil)
+fill style: solid/none
+id: gge27
+thermal: spoke/direct
+keep island: none/yes
+copper zone: [[\”M339,329 349,247 492,261 457,314z\”]] rings and holes
+locked: null
+COPPERAREA’s attributes and image looks like bellow image:
+
+
+RECT
+"RECT~406~220~105~52~1~gge32"
+Format:
+
+Check Rect element of SVG out.
+
+command: RECT
+x: 406
+y: 220
+width: 105
+height: 52
+layer id:1
+id: gge36
+locked:null
+Rect’s attributes and image looks like bellow image:
+
+CIRCLE
+"CIRCLE~363~273~42~1~3~gge33"
+Format:
+Check Circle element of SVG out.
+
+command: CIRCLE
+cx:363 (3630 mil)
+cy:273
+r:42 (420 mil)
+stroke width: 1 (10mil)
+layer id: 3 (Top silk layer)
+id: gge33
+locked:null
+CIRCLE’s attributes and image looks like bellow image:
+
+
+SOLIDREGION
+"SOLIDREGION~1~GND~322 256 376 317 447 250 353 231~solid~gge34"
+Format:
+
+command: SOLIDREGION
+layer id: 1 (Toplayer)
+net: GND
+points:322 256 376 317 447 250 353 231
+type: solid/cutout/npth
+id: gge34
+locked:null
+SOLIDREGION’s attributes and image looks like bellow image:
+
+
+TEXT
+"TEXT~L~351~252~0.8~0~none~1~~8~TEXT~M 352.55 250.64 L 352.55 258.27 M 350 250.64 L 355.09 250.64 M 357.49 250.64 L 357.49 258.27 M 357.49 250.64 L 362.22 250.64 M 357.49 254.27 L 360.4 254.27 M 357.49 258.27 L 362.22 258.27 M 364.62 250.64 L 369.71 258.27 M 369.71 250.64 L 364.62 258.27 M 374.65 250.64 L 374.65 258.27 M 372.11 250.64 L 377.2 250.64~~gge35"
+Format:
+
+command: TEXT
+type: L/P (L = label, P = prefix)
+position x: 351 (3510 mil)
+position y: 252 (2520 mil)
+stroke width: 0.8 (8 mil)
+rotation: 0
+mirror : none ( not user now)
+layer id: 1 (Toplayer)
+net: ‘’
+font size: 8 (80 mil in height)
+string: TEXT
+text path: M 352.55 250.64 L 352.55 258.27 M 350 250.64 L 355.09 250.64 M 357.49 250.64 L 357.49 258.27 M 357.49 250.64 L 362.22 250.64 M 357.49 254.27 L 360.4 254.27 M 357.49 258.27 L 362.22 258.27 M 364.62 250.64 L 369.71 258.27 M 369.71 250.64 L 364.62 258.27 M 374.65 250.64 L 374.65 258.27 M 372.11 250.64 L 377.2 250.64
+display: ‘’ (none = hide, other = show)
+id: gge35
+locked: null
+TEXT’s attributes and image looks like bellow image:
+
+
+Arc
+"ARC~1~1~S$19~M329,274 A26.95,26.95 0 0 1 370,309~~gge50"
+Format:
+Arc is a Path element, Check Path element of SVG out.
+
+command: ARC
+stroke width: 1 (10 mil)
+layer id: 1 (Toplayer)
+net: S$19
+path string: M329,274 A26.95,26.95 0 0 1 370,309
+helper dots: the four green dots, no need in PCB, keep it blank
+id: gge19
+locked:null
+ARC’s attributes and image looks like bellow image:
+
+
+PAD
+"PAD~OVAL~814~371~6~16~11~~1~1.8~814 366 814 376~0~gge5~11~814 374.7 814 367.3~N"
+Format:
+
+command: PAD
+shape: ELLIPSE/RECT/OVAL/POLYGON
+center x: 814
+center y: 371
+width: 6 (60 mil)
+height: 16 (160 mil)
+layer id: 11 (All)
+net: ‘’
+number: 1
+hole radius: 1.8 (18 mil)
+points: ‘’ (ELLIPSE = ‘’, RECT = outline points)
+rotation: 0 [0 - 360]
+id: gge19
+Hole(Length): 11 (110mil)
+Hole Points: 814 374.7 814 367.3 // slot hole from to point
+Plated:Y/N
+locked:null
+PAD’s attributes and image looks like bellow image:
+
+
+VIA
+"VIA~432~215~3.2~~0.8~gge5"
+Format:
+
+command: VIA
+center x: 432
+center y: 215
+diameter: 3.2
+net : ‘’
+hole radius: 0.8 (8 mil)
+id: gge5
+locked:null
+VIA’s attributes and image looks like bellow image:
+
+
+HOLE
+"HOLE~284~255~4~gge5"
+Format:
+
+command: HOLE
+center x: 284
+center y: 255
+diameter: 4
+id: gge5
+locked:null
+HOLE’s attributes and image looks like bellow image:
+
+
+DIMENSION
+"DIMENSION~3~M 301 217 L 442 217 M 306 220 L 301 217 L 306 214 M 437 220 L 442 217 L 437 214 M 369.5 209.82 L 370.05 209.55 L 370.86 208.73 L 370.86 214.45 M 372.94 213.09 L 372.66 213.36 L 372.94 213.64 L 373.21 213.36 L 372.94 213.09 M 377.74 208.73 L 375.01 212.55 L 379.1 212.55 M 377.74 208.73 L 377.74 214.45 M 380.9 209.82 L 381.45 209.55 L 382.26 208.73 L 382.26 214.45 M 384.06 208.73 L 384.06 210.64 M 386.25 208.73 L 386.25 210.64~gge8"
+Format:
+
+command: DIMENSION
+layer id: 3 (Top Silk layer)
+path: M 301 217 L 442 217 M 306 220 L 301 217 L 306 214 M 437 220 L 442 217 L 437 214 M 369.5 209.82 L 370.05 209.55 L 370.86 208.73 L 370.86 214.45 M 372.94 213.09 L 372.66 213.36 L 372.94 213.64 L 373.21 213.36 L 372.94 213.09 M 377.74 208.73 L 375.01 212.55 L 379.1 212.55 M 377.74 208.73 L 377.74 214.45 M 380.9 209.82 L 381.45 209.55 L 382.26 208.73 L 382.26 214.45 M 384.06 208.73 L 384.06 210.64 M 386.25 208.73 L 386.25 210.64
+id: gge5
+locked:null
+DIMENSION’s attributes and image looks like bellow image:
+
+DIMENSION just allows to change it layer id, if you don’t accept this DIMENSION, delete it and redraw again.
+
+Footprint
+"LIB~245~240~package`CK17-B`~~~gge15~1#@$TEXT~P~295~219.5~0.7~0~~3~~4.5~C1~M 298.07 218.07L297.86 217.66 L297.45 217.25 L297.05 217.05 L296.23 217.05 L295.82 217.25 L295.41 217.66 L295.2 218.07 L295 218.68 L295 219.7 L295.2 220.32 L295.41 220.73 L295.82 221.14 L296.23 221.34 L297.05 221.34 L297.45 221.14 L297.86 220.73 L298.07 220.32 M 299.42 217.86L299.83 217.66 L300.44 217.05 L300.44 221.34 ~~gge16#@$TRACK~0.9~3~~257.5 224.5 332.5 224.5 332.5 255.5 257.5 255.5 257.5 224.5~gge17#@$PAD~ELLIPSE~245~240~9.4~9.4~11~~1~2.25~~0~gge18#@$PAD~ELLIPSE~345~240~9.4~9.4~11~~2~2.25~~0~gge19"
+A Footprint has several shapes, join these shapes with #@$(Octothorpe Ampersat Dollar) as a string like above.
+
+configure LIB~245~240~package`CK17-B`~0~~gge15~1
+
+command: LIB
+position x: 270
+position y: 140
+custom attributes: package`CK17-B`
+rotation: 0, can be [0 - 360 ]
+import flag: ‘’, just used in import from eagle
+id: gge115
+locked: null
+shapes
+
+All other items are shapes.
+
+Footprints’ image looks like bellow image:
+Content
+EasyEDA Schematic File Object
+Rules
+JSON Keys
+itemOrder key
+Example
+File
+wire
+Symbol
+JSON example
+EasyEDA Schematic File Object
+Note: Schematic, Schematic Symbol, Spice Symbol, Subpart and Subckt use the same format.
+
+EasyEDA Schematic File Object is a JSON Object which allows you to hack your designs via other languages, such as Javascript, Python, PHP, C, C++. The interesting thing is that your can control/modify your design in EasyEDA editor via Javascript language.
+
+Rules
+JSON Keys
+Every EasyEDA graph unit has an unique key, such as “wire“, “Symbol“, “junction“, “bus“, “busentry“, “netlabel“, “netflag“, “pin“, “polyline“, “path“, “arc“, “rect“, “polygon“, “arrowhead“, “ellipse“, “image“
+
+itemOrder key
+Because an object in EasyEDA is an unordered set of name/value pairs in JSON format, but EasyEDA’s graphs are ordered. We need an array to store the order of these objects. Every schematic lib has an itemOrder key and the whole JSON object has an itemOrder key.
+
+Example
+File
+
+Open Schematic Example
+
+wire
+"wire":{
+    "gge48":{
+        "gId":"gge48",
+        "strokeColor":"#008800",
+        "strokeWidth":"1",
+        "strokeStyle":0,
+        "fillColor":"none",
+        "pointArr":[
+            {
+                "x":290,
+                "y":430
+            },
+            {
+                "x":370,
+                "y":430
+            },
+            {
+                "x":370,
+                "y":490
+            }
+        ]
+    }
+	..........
+}
+All wires will be stored to wire key, their id will be taken as the key such as gge48.
+
+Symbol
+All schematic components will be stored to Symbol, their id will be taken as the key such as gge7. Schematic component JSON is a little bit complicated, it has lots of other JSON Keys, such as polyline, image, path etc.
+
+Note: please check the other shapes format via below JSON example
+
+JSON example
+check the complete JSON object via github gist Schematic Json object
+https://gist.github.com/dillonHe/fe0bb029c51603077ad9.js
+Content
+EasyEDA PCB File Object
+Rules
+JSON Keys
+itemOrder key
+Example
+File
+TRACK
+SIGNALS
+FOOTPRINT
+JSON example
+EasyEDA PCB File Object
+Note: PCB and Package use the same format.
+
+EasyEDA PCB File Object is a JSON Object which allows you to hack your designs via another language, such as Javascript, Python, PHP, C, C++. The interesting thing is that your can control/modify your design in EasyEDA editor via Javascript. So you can use codes to create your own outline.
+
+Rules
+JSON Keys
+Every EasyEDA graph unit has an unique key, such as “TRACK”, “PAD”, “VIA”, “TEXT”, “DIMENSION”, “FOOTPRINT”, “ARC”, “RECT”, “CIRCLE”, “HOLE”, “COPPERAREA”, “SOLIDREGION”, “DRCRULE”, “FABRICATION”
+
+itemOrder key
+Because of an object in EasyEDA is an unordered set of name/value pairs in JSON format, but EasyEDA’s graphs are ordered. We need an array to store the order of these objects. Every package has an itemOrder key and the whole JSON object has an itemOrder key.
+
+Example
+File
+
+Open PCB Example
+
+TRACK
+"TRACK":{
+    "gge6":{
+        "gId":"gge6",
+        "layerid":"1",
+        "net":"S$7",
+        "pointArr":[
+            {
+                "x":357,
+                "y":171
+            },
+            {
+                "x":456,
+                "y":171
+            }
+        ],
+        "strokeWidth":1
+    }
+	......
+},
+All tracks will be stored to TRACK key, their id will be taken as the key such as gge6.
+
+SIGNALS
+EasyEDA groups all of the objects with the same net name in one array.
+
+FOOTPRINT
+All packages will be stored to FOOTPRINT, their id will be taken as the key such as gge7. PCB package JSON is little bit complicated, it has lots of other JSON Keys, such as TRACK, ARC, RECT etc.
+
+Note: please check the other shapes format via below JSON example
+
+JSON example
+Check the complete JSON object via github gist PCB Json object
+https://gist.github.com/dillonHe/071d4680dcdbf6bf9dd6.js
+概述
+通用文档格式
+分隔符
+文件头head
+画布配置canvas
+图元数据shape
+边界框数据BBox
+层配置layers(PCB)
+元素的可选与显示配置objects(PCB)
+偏好设置preference(PCB)
+drc检测规则DRCRULE(PCB)
+自动布线规则routerRule(PCB)
+网络颜色netColors(PCB)
+仿真数据(波形图)waveForm
+图元格式
+原理图部分
+1.简单图元
+折线polyline
+导线wire
+总线bus
+多边形polygon
+矩形rect
+图片image
+圆circle
+椭圆ellipse
+直线line
+路径path
+圆弧arc
+文本annotation
+表格图片pimage
+2.复杂图元
+引脚pin
+连接点junction
+标识符netflag
+网络标签netlabel
+总线分支busentry
+箭头arrowhead
+无连接标志noconnectflag
+3.特殊图元
+形状SHEET
+器件schlib
+PCB部分
+1.简单图元
+导线TRACK
+矩形RECT
+圆CIRCLE
+文本TEXT
+圆弧ARC
+2.复杂图元
+焊盘PAD
+过孔VIA
+通孔HOLE
+铺铜COPPERAREA
+实心填充SOLIDREGION
+尺寸DIMENSION
+量角器PROTRACTOR
+3.特殊图元
+形状SVGNODE
+内电层PLANEZONE
+封装FOOTPRINT
+图纸SHEET
+原理图文件格式
+PCB文件格式
+更新日志
+[TOC]
+
+概述
+2020.08.11
+
+这里的文档格式即嘉立创EDA标准版的文件源码格式，分为两种类型：
+
+sch类型文档
+pcb类型文档
+文档为严格的JSON类型字符串。以下将以JSON格式按照不同的字段进行说明。
+
+两种文档类型的格式十分类似，主要区别在于基本图元和某些特殊属性值的差异，相同部分请参考通用文档格式部分。
+
+通用文档格式
+在不同的类型的文档中，有些格式是通用的，或者是某些文档专用的，总结如下。
+
+分隔符
+//压缩格式的分隔符
+var SP = '~',
+	SEG = '^^',
+	NEWLINE = '#@$',
+	PARASP = '`',//各个参数的分隔标记para SP
+	SHEET = '#sheet#';//从服务器加载多个文件, Eagle导入 + netlistHandle
+文件头head
+字段名：head。json类型，包含了整个文档的基本信息。
+
+示例以及数据格式：
+
+{
+    "docType": "1",				// [文档类型] - string
+    "editorVersion": "6.3.0",	// [文档版本号] - string
+    "c_para": {},				// [自定义属性] - josn
+    "x": "4000",				// [文档坐标原点横坐标] - string
+    "y": "3000",				// [文档坐标原点纵坐标] - string
+    "hasIdFlag": true,			// [库文件是否已绑定了对应封装的uuid] - boolean
+    "newgId": true,				// [内部器件是否生成唯一id] - boolean
+    "importFlag": 0,			// [eagle导入标记] - number
+    "transformList": "",		// [偏移数据] - string（弃用）
+    "c_spiceCmd": "",			// [仿真指令] - string（只在原理图类型文档中配置）(弃用)
+    "isSheet": true,			// [是否为图纸] - boolean(识别库是否为图纸类型)
+    "importedFrom": ''			// [导入来源] - 已弃用
+}
+画布配置canvas
+字段名：canvas，string类型，使用符号~分隔。用来标识画布相关属性。
+
+示例：
+
+"CA~1000~1000~#000000~yes~#FFFFFF~10~1000~1000~line~0.5~mm~1~45~~0.5~4000~3000~0~none"
+格式说明：
+
+原理图：
+
+1.[固定标识]：'CA'
+2.[viewWidth]：svg元素的width属性值，zoom越大该值越大。（旧版本使用）
+3.[viewHeight]：svg元素的height属性值，zoom越大该值越大。（旧版本使用）
+4.[backGround]：背景色
+5.[gridVisible]：网格是否可见
+6.[gridColor]：网格颜色
+7.[gridSize]：网格尺寸
+8.[canvasWidth]：逻辑上的画布宽，即svg viewBox里的宽，不随zoom改变（旧版本使用）
+9.[canvasHeight]：逻辑上的画布高，即svg viewBox里的高，不随zoom改变（旧版本使用）
+10.[gridStyle]：网格样式
+11.[snapSize]：吸附的栅格尺寸
+12.[unit]：单位
+13.[altSnapSize]：alt键吸附尺寸
+14.[originX]：画布原点横坐标
+15.[originY]：画布原点纵坐标
+pcb：（比原理图多了一些数据）
+
+1.[固定标识]：'CA'
+2.[viewWidth]：svg元素的width属性值，zoom越大该值越大。（旧版本使用）
+3.[viewHeight]：svg元素的height属性值，zoom越大该值越大。（旧版本使用）
+4.[backGround]：背景色
+5.[gridVisible]：网格是否可见
+6.[gridColor]：网格颜色
+7.[gridSize]：网格尺寸
+8.[canvasWidth]：逻辑上的画布宽，即svg viewBox里的宽，不随zoom改变（旧版本使用）
+9.[canvasHeight]：逻辑上的画布高，即svg viewBox里的高，不随zoom改变（旧版本使用）
+10.[gridStyle]：网格样式
+11.[snapSize]：吸附的栅格尺寸
+12.[unit]：单位
+13.[routingWidth]：线宽
+14.[routingAngle]：拐角角度
+15.[copperAreaDisplay]：铺铜区是否可见
+16.[altSnapSize]：alt键吸附尺寸
+17.[originX]：画布原点横坐标
+18.[originY]：画布原点纵坐标
+19.[routeConflict]：布线冲突（忽略 | 环绕 | 阻挡）
+20.[removeLoop]：是否移除回路
+图元数据shape
+字段名：shape。字符串数组类型。每条数据对应每个图元的压缩数据。
+
+原理图中包含了矩形、文字和椭圆的数据示例：
+
+[
+    "R~440~300~~~50~110~#000000~1~0~none~gge5~0~",
+    "T~L~360~300~0~#0000FF~~9pt~~~~comment~Text~1~start~gge8~0~pinpart",
+    "E~410~355~10~25~#000000~1~0~none~gge12~0"
+]
+图元数据的单条数据结构请参考：图元格式。
+
+边界框数据BBox
+字段：BBOX。json类型。整个文档的盒子模型数据。
+
+示例：
+
+{
+    "x": 4033.1,		// 文档画布边界左上角横坐标
+    "y": 3282.1,		// 文档画布边界左上角纵坐标
+    "width": 113.3,		// 文档画布边界宽度
+    "height": 147.8		// 文档画布边界高度
+}
+层配置layers(PCB)
+字段名：layers。字符串数组类型。层配置信息只在pcb类型文档中，记录了层工具的显示与激活等信息。
+
+示例：
+
+[
+    "1~TopLayer~#FF0000~true~true~true~",
+    "2~BottomLayer~#0000FF~true~false~true~",
+    "3~TopSilkLayer~#FFCC00~true~false~true~",
+    "4~BottomSilkLayer~#66CC33~true~false~true~",
+    "21~Inner1~#999966~true~false~true~0~Plane",
+]
+数组中每条数据表示对应层的相关层信息，使用间隔符~分开，数据格式为：
+
+1.[layerid]：层的id标识
+2.[name]：层名称
+3.[color]：层颜色
+4.[visible]：层是否可见
+5.[active]：是否为当前激活层
+6.[config]：是否配置当前层
+7.[transparency]：层透明度
+8.[type]：层类型（内电层 | 信号层），内层专有配置
+元素的可选与显示配置objects(PCB)
+字段：objects。字符串数组类型。记录层工具的元素可选与显示设置信息（pcb类型文档专用）。
+
+示例：
+
+[
+    "All~true~false",
+    "Component~true~true",·
+    "Prefix~true~true",
+    "Name~true~false",
+    "Track~true~true",
+    "Pad~true~true",
+    "Via~true~true",
+    "Hole~true~true",
+    "Copper_Area~true~true",
+    "Circle~true~true",
+    "Arc~true~true",
+    "Solid_Region~true~true",
+    "Text~true~true",
+    "Image~true~true",
+    "Rect~true~true",
+    "Dimension~true~true",
+    "Protractor~true~true"
+]
+数据格式：
+
+1.[key]：元素关键字标识符（不能包含空格，会用_替换带有空格的key）
+2.[selected]：是否可选中
+3.[visible]：是否显示
+偏好设置preference(PCB)
+字段：preference。json类型。记录文档的一些偏好设置（pcb类型文档专用）。
+
+示例：
+
+{
+    "hideFootprints": "",
+    "hideNets": ""
+}
+drc检测规则DRCRULE(PCB)
+字段：DRCRULE。json类型。记录drc检测规则配置信息（pcb类型文档专用）。
+
+示例：
+
+{
+    "Default": {				// 默认配置
+      "trackWidth": 1,			// 线宽
+      "clearance": 0.6,			// 检测间距
+      "viaHoleDiameter": 2.4,	// 孔外径 
+      "viaHoleD": 1.2			// 孔内径
+    },
+    "isRealtime": false,				// 是否实时检测
+    "isDrcOnRoutingOrPlaceVia": false,	// 是否在布线与放置过孔时应用设计规则
+    "checkObjectToCopperarea": true,	//	是否检测元素到铺铜的距离
+    "showDRCRangeLine": true			// 是否在布线时显示DRC安全边界
+  }
+自动布线规则routerRule(PCB)
+字段：routerRule。json类型。记录布线规则的配置信息（pcb类型文档专用）。
+
+{
+    "unit": "mil",				// 单位
+    "trackWidth": 6,			// 线宽
+    "trackClearance": 6,		// 间距
+    "viaHoleD": 12,				// 孔内径
+    "viaDiameter": 24,			// 孔外径
+    "routerLayers": [			// 布线层配置
+      1,
+      2
+    ],
+    "smdClearance": 6,			// 贴片和器件的间距
+    "specialNets": [			// 特殊网络配置
+      {
+        "net": "AAA",			// 网络
+        "width": "15mil",		// 线宽
+        "clearance": "11mil"	// 间距
+      }
+    ],
+    "nets": [					// 所有网络
+      "AAA"
+    ],
+    "padsCount": 1,				// 焊盘数量
+    "skipNets": [],				// 忽略的网络配置
+    "realtime": true			// 实时检测
+}
+网络颜色netColors(PCB)
+字段：netColors。json类型。记录网络颜色配置信息（pcb类型文档专用）。
+
+示例：
+
+{
+    "DSA": {
+      "color": "#339933"
+    },
+    "FSADFDSA": {
+      "color": "#FF0000"
+    }
+}
+仿真数据(波形图)waveForm
+字段：waveForm。json字符串类型。仿真波形图专用字段，用于存储波形图数据。
+
+图元格式
+基础图元组合起来就是一个完整的器件（封装），比如最基本的矩形、圆这种简单图元，复杂一点的图元如引脚、网络标签、焊盘等。复杂图元其实也是简单基本图元组成的。
+
+原理图的基础图元和pcb的基础图元基本都不一致。
+
+两种文档类型的基础图元都有一种特殊图元，特殊图元独立存在，不再组成其他元素，比如原理图的schlib和pcb的FOOTPRINT，即原理图器件和pcb封装，这两种图元基本都由其他基础图元组成，但不允许有本身图元组成。
+
+数据类型：string。基本数据以分隔符~隔开。
+
+原理图部分
+1.简单图元
+折线polyline
+示例：
+
+"PL~230 290 430 180 550 340~#000000~1~0~none~gge5~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，默认为"PL"。
+2.[pointerStr]:折线polyline的points数据字符串
+3.[strokeColor]:线条颜色
+4.[strokeWidth]:线条宽度
+5.[strokeStyle]:线条样式
+6.[fillColor]:填充颜色
+7.[gId]:元素id
+8.[locked]:是否锁定
+导线wire
+示例：
+
+"W~495 -580 495 -475 580 -475~#008800~1~0~none~gge79~0"
+导线的数据格式除了首位标识符为W，其余结构同polyline一致。
+
+总线bus
+示例：
+
+"B~410 -565 400 -455~#008800~2~0~none~gge80~0"
+总线的数据格式除了首位标识符为B，其余结构同polyline一致。
+
+多边形polygon
+示例：
+
+"PG~290 260 340 350 440 230 390 200 390 200~#000000~1~0~none~gge5~0"
+多边形的数据格式除了首位标识符为PG，其余结构同polyline一致。
+
+矩形rect
+示例：
+
+"R~360~250~~~70~80~#000000~1~0~none~gge6~0~"
+数据格式：
+
+1.[cmdKey]：图元标识符，R
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[rx]：水平轴向的圆角半径尺寸
+5.[ry]：垂直轴向的圆角半径尺寸
+6.[width]：矩形宽度
+7.[height]：矩形高度
+8.[strokeColor]：线条颜色
+9.[strokeWidth]：线条宽度
+10.[strokeStyle]：线条样式
+11.[fillColor]：填充颜色
+12.[gId]：元素id
+13.[locked]：是否锁定
+14:[c_etype]:c_etype属性值（自定义的用于细分图元类型的属性）
+图片image
+示例：
+
+"I~360~290~104~26~0~data:image/png;base64,iVBORw......TkSuQmCC~gge11~0~"
+数据格式：
+
+1.[cmdKey]：图元标识符，I
+2.[x]：x坐标
+3.[y]：y坐标
+4.[width]：图片宽度
+5.[height]：图片高度
+6.[rotate]：旋转角度
+7.[href]：图片的数据信息
+8.[gId]：元素id
+9.[locked]：是否锁定
+10.[transform]：偏移属性
+圆circle
+注：新版本已弃用（椭圆可代替）。
+
+示例：
+
+"C~685~315~35~#000000~1~0~none~gge21~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，C
+2.[cx]：圆心x坐标
+3.[cy]：圆心y坐标
+4.[r]：半径
+5.[strokeColor]：线条颜色
+6.[strokeWidth]：线条宽度
+7.[strokeStyle]：线条样式
+8.[fillColor]：填充颜色
+9.[gId]：元素id
+10.[locked]：是否锁定
+椭圆ellipse
+示例：
+
+"E~420~295~40~25~#000000~1~0~none~gge22~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，E
+2.[cx]：圆心x坐标
+3.[cy]：圆心y坐标
+4.[rx]：x轴上椭圆的半径
+5.[ry]：y轴上椭圆的半径
+6.[strokeColor]：线条颜色
+7.[strokeWidth]：线条宽度
+8.[strokeStyle]：线条样式
+9.[fillColor]：填充颜色
+10.[gId]：元素id
+11.[locked]：是否锁定
+直线line
+示例：
+
+"L~0~470~-765~480~-775~gge105~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，L
+2.[x1]：起点横坐标
+3.[y1]：起点纵坐标
+4.[x2]：终点横坐标
+5.[y2]：终点纵坐标
+6.[strokeColor]：线条颜色
+7.[strokeWidth]：线条宽度
+8.[strokeStyle]：线条样式
+9.[fillColor]：填充颜色
+10.[gId]：元素id
+11.[locked]：是否锁定
+路径path
+示例：
+
+"PT~M370 280 C410 380 490 300 440 240~#000000~1~0~none~gge23~0~"
+数据格式：
+
+1.[cmdKey]：图元标识符，PT
+2.[pathString]：path路径
+3.[strokeColor]：线条颜色
+4.[strokeWidth]：线条宽度
+5.[strokeStyle]：线条样式
+6.[fillColor]：填充颜色
+7.[gId]：元素id
+8.[locked]：是否锁定
+圆弧arc
+示例：
+
+"A~M 459.9983 319.997 A 70 170 0 1 1 461.2807 267.9875~~#000000~1~0~none~gge26~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，A
+2.[pathString]：path路径
+3.[helperDots]：已移除，占位。
+4.[strokeColor]：线条颜色
+5.[strokeWidth]：线条宽度
+6.[strokeStyle]：线条样式
+7.[fillColor]：填充颜色
+8.[gId]：元素id
+9.[locked]：是否锁定
+文本annotation
+示例：
+
+"T~L~390~300~0~#0000FF~~9pt~~~~comment~Text~1~start~gge27~0~pinpart"
+数据格式：
+
+1.[cmdKey]：图元标识符，A
+2.[mark]：文本标记，可选值：L(普通文本) | N(器件名称) | P(器件编号) | PK(封装名)
+3.[x]：横坐标
+4.[y]：纵坐标
+5.[rotation]：旋转角度
+6.[fillColor]：填充颜色
+7.[fontFamily]：字体
+8.[fontSize]：文字大小
+9.[fontWeight]：文字粗细
+10.[fontStyle]：文字样式（自动 | 正常 | 斜体）
+11.[dominantBaseline]：文字的dominant-baseline属性
+12.[type]：文本类型（注释 | 仿真）
+13.[value]：文本值
+14.[visible]：是否可见
+15.[textAnchor]：文字的text-anchor属性
+16.[gId]：元素id
+17.[locked]：是否锁定
+18.[c_etype]：c_etype属性值（c_etype是自定义的用于细分图元类型的属性）
+表格图片pimage
+注：目前只用于表格内的图片，为了与普通图片做区分使用的一种新类型图元表示。
+
+示例：
+
+"Pimage~L~1~gge74~0~gge75~694.99995~-38~104~26~data:image/png;base64,iVBORw0KG......pCvHNepOOktyLeC61RcZ3JlkHPt9dXiX4IAntNzzH4CAAAAAElFTkSuQmCC"
+数据格式：
+
+1.[cmdKey]：图元标识符，Pimage
+2.[mark]：特殊标记（未使用）
+3.[visible]：是否可见（未使用）
+4.[locked]：是否锁定
+5.[imgid]：元素id
+6.[imgx]：x坐标
+7.[imgy]：y坐标
+8.[imgwidth]：图片宽度
+9.[imgheight]：图片高度
+10.[imghref]：图片base64数据信息
+2.复杂图元
+引脚pin
+注：引脚的数据格式使用了两种分隔符，外层整体数据使用^^，内层单一数据再使用~分隔。
+
+示例：
+
+"P~show~0~1~420~300~~gge31~0^^420~300^^M 420 300 h -20~#880000^^1~398~303~0~1~end~~~#0000FF^^1~405~299~0~1~start~~~#0000FF^^0~403~300^^0~M 400 297 L 397 300 L 400 303"
+数据格式：
+
+#1.[configure] - 配置信息
+1.[cmdKey]：图元标识符，P
+2.[dispaly]：是否显示
+3.[electric]：电气属性
+4.[spicePin]：仿真编号
+5.[x]：横坐标   //弃用，参考path
+6.[y]：纵坐标   //弃用，参考path
+7.[rotation]：旋转角度  
+8.[gId]：元素id
+9.[locked]：是否锁定
+
+#2.[pinDot] - 引脚吸附点(起点)信息
+1.[x]：起点横坐标   //弃用，参考path
+2.[y]：起点纵坐标   //弃用，参考path
+
+#3.[path] - 引脚路径信息
+1.[pathString]：路径数据
+2.[pinColor]：引脚颜色
+
+#4.[name] - 引脚名称信息
+1.[visible]：是否可见
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[rotation]：旋转角度
+5.[text]：文本值
+6.[textAnchor]：文字的text-anchor属性
+7.[fontFamily]：字体
+8.[fontSize]：文本大小
+9.[fillColor]：文本填充颜色
+
+#5.[num] - 引脚编号信息
+1.[visible]：是否可见
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[rotation]：旋转角度
+5.[text]：文本值
+6.[textAnchor]：文字的text-anchor属性
+7.[fontFamily]：字体
+8.[fontSize]：文本大小
+9.[fillColor]：文本填充颜色
+
+#6.[num] - 引脚终点信息
+1.[visible]： 终点是否可见
+2.[x]：终点横坐标
+3.[y]：终点纵坐标
+
+#7.[clock] - 引脚时钟信息
+1.[visible]： 时钟是否显示
+2.[pathString]：时钟路径信息
+连接点junction
+示例：
+
+"J~425~-170~2.5~#CC0000~gge130~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，J
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[r]：半径
+5.[fillColor]：填充颜色
+6.[gId]：元素id
+7.[locked]：是否锁定
+标识符netflag
+注：同引脚的数据格式类似，使用了两种分隔符，外层整体数据使用^^，内层单一数据再使用~分隔。
+
+示例：
+
+"F~part_netLabel_+5V~425~-170~270~gge124~~0^^425~-170^^+5V~#000000~435.5~-166~0~start~1~Times New Roman~9pt~gge126^^PL~435 -170 425 -170~#000000~1~0~none~gge128~0^^PL~435 -175 435 -165~#000000~1~0~transparent~gge129~0"
+数据格式：
+
+#1.[configure] - 配置信息
+1.[cmdKey]：图元标识符，F
+2.[partId]：标识符类型以及文本信息
+3.[x]：横坐标
+4.[y]：纵坐标
+5.[rotation]：旋转角度
+6.[gId]：元素id
+7.[transform]：偏移信息（旧版本）
+8.[locked]：是否锁定
+
+#2.[pinDot] - 吸附点信息
+1.[x]：吸附点横坐标
+2.[y]：吸附点纵坐标
+
+#3.[mark] - 标识符文本信息
+1.[netFlagString]：文本值
+2.[fillColor]：填充颜色
+3.[x]：横坐标
+4.[y]：纵坐标
+5.[rotation]：旋转角度
+6.[textAnchor]：文字的text-anchor属性
+7.[visible]：是否可见
+8.[fontFamily]：字体
+9.[fontSize]：文本大小
+10.[gId]：文本元素id
+网络标签netlabel
+示例：
+
+"N~515~-430~0~#0000ff~netLabel1~gge78~start~517~-432.5~Times New Roman~7pt~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，N
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[rotation]：旋转角度
+5.[fillColor]：填充颜色
+6.[textAnchor]：文字的text-anchor属性
+7.[visible]：是否可见
+8.[fontFamily]：字体
+9.[fontSize]：文本大小
+10.[gId]：文本元素id
+总线分支busentry
+示例：
+
+"BE~0~495~-405~505~-415~gge78~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，BE
+2.[x1]：起点横坐标
+3.[y1]：起点纵坐标
+4.[x2]：终点横坐标
+5.[y2]：终点纵坐标
+6.[gId]：元素id
+7.[locked]：是否锁定
+箭头arrowhead
+示例：
+
+"AR~part_arrowhead~410~300~gge5~0~M 410 300 L 395 307.5 L 398.75 300 L 395 292.5 Z ~#000000~0~3~15"
+数据格式：
+
+1.[cmdKey]：图元标识符，AR
+2.[partType]：放置类型，固定为"part_arrowhead"
+3.[x]：横坐标
+4.[y]：纵坐标
+5.[gId]：文本元素id
+6.[rotation]：旋转角度
+7.[pathString]：箭头路径数据
+8.[fillColor]：填充颜色
+9.[locked]：是否锁定
+10.[arrowtype]：箭头类型（1 | 2 | 3）
+11.[arrowsize]：箭头尺寸
+无连接标志noconnectflag
+示例：
+
+"O~0~0~gge86~M-4 -4L4 4M4 -4L-4 4~#33cc33~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，O
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[gId]：文本元素id
+5.[pathString]：路径数据
+6.[strokeColor]：线条颜色
+7.[locked]：是否锁定
+3.特殊图元
+形状SHEET
+这里的形状可以理解为自由格式的组合，可以自定义数据格式，目前原理图没有使用入口，主要在pcb中使用，例如pcb文档中的图形，3D模型等都使用的svgnode图元进行构建。更多细节请参考基础图元格式 > PCB部分 > 特殊图元 > 形状svgnode。
+
+器件schlib
+原理图的schlib即原理图器件（库文件），库文件可以由其他图元组成，但不能由库本身组成库，原理图库只能放置在原理图中。
+
+在原理图中，schlib压缩数据同其他图元一样会放到shape字段下，schlib格式分为两部分组成：
+
+器件的头部数据：头部数据以分隔符~隔开。
+器件的内部图元数据：图元之间将会以分隔符#@$隔开。
+两部分数据再以分隔符号#@$隔开。
+
+示例：
+
+"LIB~0~0~package`R0201`nameAlias`Value(Ω)`BOM_Supplier Part``BOM_Supplier``Contributor`LCEDA_Lib`spicePre`R`spiceSymbolName`R_0201_US`BOM_Manufacturer Part``~~0~gge3fb2f834261e887c~b600ab0518154c0c9d2ed5ca96244c69~36be002046ee442daec3a30b0f22c9fe~0~~yes~yes#@$T~N~-5.96875~-8~0~#000080~Arial~~~~~comment~1k~1~start~gge167~0~#@$T~P~-5.96875~-17.15625~0~#000080~Arial~~~~~comment~R1~1~start~gge169~0~#@$PL~15 0 12 5~#A00000~1~0~none~gge171~0#@$PL~7 -5 2 5~#A00000~1~0~none~gge172~0#@$PL~12 5 7 -5~#A00000~1~0~none~gge173~0#@$P~show~0~2~20~0~0~gge174~0^^20~0^^M 20 0 h -5~#800^^0~11~0~0~2~end~~~#800^^0~19~-4~0~2~start~~~#800^^0~18~0^^0~M 15 -3 L 12 0 L 15 3#@$PL~-7 5 -12 -5~#A00000~1~0~none~gge181~0#@$PL~2 5 -2 -5~#A00000~1~0~none~gge182~0#@$PL~-2 -5 -7 5~#A00000~1~0~none~gge183~0#@$PL~-12 -5 -15 0~#A00000~1~0~none~gge184~0#@$P~show~0~1~-20~0~180~gge185~0^^-20~0^^M -20 0 h 5~#800^^0~-11~0~0~1~start~~~#800^^0~-19~-4~0~1~end~~~#800^^0~-18~0^^0~M -15 3 L -12 0 L -15 -3"
+数据格式：
+
+#1.[器件头部数据]
+1.[cmdKey]：图元标识符，LIB
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[c_para]：自定义属性
+5.[rotation]：旋转角度
+6.[importFlag：eagle导入标记
+7.[gId]：元素id
+8.[puuid]：绑定的pcb封装uuid
+9.[uuid]：器件的uuid
+10.[locked]：是否锁定
+11.[bind_pcb_id]：绑定的pcb封装的id（弃用）
+12.[convert_to_pcb]：是否更新到pcb
+13.[add_into_bom]：是否加入bom表单
+
+#2.[器件内部图元数据]：即其他基本图元的压缩格式。
+PCB部分
+1.简单图元
+导线TRACK
+示例：
+
+"TRACK~1~1~~4055.5 3348 4055.5 3346 4131.5 3270 4096 3270~gge5~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，TRACK
+2.[strokeWidth]:线宽
+3.[layerid]：所属层
+4.[net]：网络
+5.[pointArr]：坐标点数据
+6.[gId]：元素id
+7.[locked]：是否锁定
+矩形RECT
+示例：
+
+"RECT~4065.5~3293.25~63~45.5~1~gge6~0~0~~~~"
+数据格式：
+
+1.[cmdKey]：图元标识符，RECT
+2.[x]:横坐标
+3.[y]：纵坐标
+4.[width]：宽度
+5.[height]：高度
+6.[layerid]：所属层
+7.[gId]：元素id
+8.[locked]：是否锁定
+9.[strokeWidth]:线宽
+10.[fill]:填充颜色
+11.[transform]:偏移数据
+12.[net]：网络
+13.[c_etype]:c_etype属性值（自定义的用于细分图元类型的属性）
+圆CIRCLE
+示例：
+
+"CIRCLE~4193.5~3148~45.6426~1~1~gge5~0~~circle_gge8,circle_gge9"
+数据格式：
+
+1.[cmdKey]：图元标识符，CIRCLE
+2.[cx]：圆心x坐标
+3.[cy]：圆心y坐标
+4.[r]：半径
+5.[strokeWidth]：线宽
+6.[layerid]：所属层
+7.[gId]：元素id
+8.[locked]：是否锁定
+9.[net]：网络
+10.[transformarc]:由圆转换的两个半圆的id信息
+文本TEXT
+示例：
+
+"TEXT~L~4081~3306.5~0.8~0~0~1~~8~TEXT~M 4083.55 3298.44 L 4083.55 3306.07 M 4081 3298.44 L 4086.09 3298.44 M 4088.49 3298.44 L 4088.49 3306.07 M 4088.49 3298.44 L 4093.22 3298.44 M 4088.49 3302.07 L 4091.4 3302.07 M 4088.49 3306.07 L 4093.22 3306.07 M 4095.62 3298.44 L 4100.71 3306.07 M 4100.71 3298.44 L 4095.62 3306.07 M 4105.65 3298.44 L 4105.65 3306.07 M 4103.11 3298.44 L 4108.2 3298.44~~gge13~~0~pinpart"
+数据格式：
+
+1.[cmdKey]：图元标识符，TEXT
+2.[type]：文本标记，可选值：L(普通文本) | N(器件名称) | P(器件编号) | PK(封装名)
+3.[x]：横坐标   //弃用，参考pathStr
+4.[y]：纵坐标   //弃用，参考pathStr
+5.[strokeWidth]:线宽
+6.[rotation]：旋转角度    //弃用，参考pathStr
+7.[mirror]:是否镜像      //弃用，参考pathStr
+8.[layerid]：所属层
+9.[net]：网络
+10.[fontSize]：文字大小
+11.[text]：文本值        //弃用，参考pathStr
+12.[pathStr]：路径数据
+13.[display]：是否显示
+14.[gId]：元素id
+15.[fontFamily]：字体
+16.[locked]：是否锁定
+17.[c_etype]：c_etype属性值（c_etype是自定义的用于细分图元类型的属性）
+圆弧ARC
+示例：
+
+"ARC~1~1~~M 4108.3572 3265.4999 A 53.7587 53.7587 0 1 0 4130.4018 3353.4528~~gge16~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，ARC
+2.[strokeWidth]:线宽
+3.[layerid]：所属层
+4.[net]：网络
+5.[d]：路径数据
+6.[c_helper_dots]：辅助线路径数据
+7.[gId]：元素id
+8.[locked]：是否锁定
+2.复杂图元
+焊盘PAD
+示例：
+
+"PAD~ELLIPSE~4020~3308.5~6~6~11~~1~1.8~~0~gge5~0~~Y~0~~~4020,3308.5",
+数据格式：
+
+1.[cmdKey]：图元标识符，PAD
+2.[shape]：焊盘形状
+3.[x]：横坐标
+4.[y]：纵坐标
+5.[width]：宽度
+6.[height]：高度
+7.[layerid]：所属层
+8.[net]：网络
+9.[number]：编号
+10.[holeR]：孔直径
+11.[pointArr]：坐标点数据
+12.[rotation]：旋转角度
+13.[gId]：元素id
+14.[holeLength]：孔长度
+15.[slotPointArr]：孔的坐标点数据
+16.[plated]：是否金属化
+17.[locked]：是否锁定
+18.[pasteexpansion]：助焊扩展
+19.[solderexpansion]：阻焊扩展
+20.[holeCenter]：孔中心坐标
+过孔VIA
+示例：
+
+"VIA~4030~3308.5~2.4~~0.6~gge11~0",
+数据格式：
+
+1.[cmdKey]：图元标识符，VIA
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[diameter]：过孔直径
+5.[net]：网络
+6.[holeR]：过孔内径
+7.[gId]：元素id
+8.[locked]：是否锁定
+通孔HOLE
+示例：
+
+"HOLE~4041.5~3309~4~gge15~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，HOLE
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[holeR]：孔直径
+5.[gId]：元素id
+6.[locked]：是否锁定
+铺铜COPPERAREA
+示例：
+
+"COPPERAREA~1~1~GND~M 4055 3023.5 L 4055 3060.5 L 4060 3065.5 L 4108.5 3065.5 L 4115.5 3058.5 L4115.5,3025 L4114,3023.5 Z~1~solid~gge83~spoke~none~~0~~1~1~1~1~yes~0",
+数据格式：
+
+1.[cmdKey]：图元标识符，COPPERAREA
+2.[strokeWidth]：线宽
+3.[layerid]：所属层
+4.[net]：网络
+5.[pathStr]：路径数据
+6.[clearanceWidth]：间距
+7.[fillStyle]：填充样式
+8.[gId]：元素id
+9.[thermal]：焊盘连接方式（发散 | 直连）
+10.[keepIsland]：是否保留孤岛
+11.[compressData]：铺铜压缩数据
+12.[locked]：是否锁定
+13.[name]：名称
+14.[order]：顺序
+15.[gridTrackWidth]：网格线宽
+16.[gridClearance]：网格间距
+17.[toBoardOutline]：到边框间距
+18.[fabricationImprove]：是否制造优化
+19.[spoke_width]：发散线宽
+实心填充SOLIDREGION
+示例：
+
+"SOLIDREGION~1~~M 4012 3300.5 L 4012 3317.5 L 4019.5 3325 L 4034 3325 L 4040 3319 L 4040 3308 L 4031 3299 L4019.5,3299 L4018.5,3298 Z~solid~gge20~~~~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，SOLIDREGION
+2.[layerid]：所属层
+3.[net]：网络
+4.[pathStr]：路径数据
+5.[type]：类型
+6.[gId]：元素id
+7.[teardrop]：泪滴
+8.[targetPad]：目标焊盘
+9.[targetWire]：目标导线
+10.[locked]：是否锁定
+尺寸DIMENSION
+示例：
+
+"DIMENSION~12~M4015.9632,3321.9632L4038.4632,3299.4632M......M 4035.5 3296.5 4045.5342 3306.5342~gge21~~0~straight~0.4"
+数据格式：
+
+1.[cmdKey]：图元标识符，DIMENSION
+2.[layerid]：所属层
+3.[d]：路径数据
+4.[gId]：元素id
+5.[fontSize]：尺寸高度
+6.[locked]：是否锁定
+7.[measuring_type]：尺寸类型
+8.[font_width]：尺寸宽度
+量角器PROTRACTOR
+示例：
+
+"PROTRACTOR~12~M4051.5 3328 L4051.5 3299.4825M4051.5 3328...... L4069.39 3309.77 ~0.4~gge22~4.5~0~0"
+数据格式：
+
+1.[cmdKey]：图元标识符，PROTRACTOR
+2.[layerid]：所属层
+3.[d]：路径数据
+4.[strokeWidth]：线宽
+5.[gId]：元素id
+6.[fontSize]：文字大小
+7.[precision]：精度
+8.[locked]：是否锁定
+3.特殊图元
+形状SVGNODE
+这里的形状可以理解为自由格式的组合，可以自定义数据格式，主要在pcb中使用，例如pcb文档中的图形，3D模型等都使用的svgnode图元进行构建。
+
+比如导入的图形：
+
+"SVGNODE~{\"gId\":\"gge65\",\"nodeName\":\"path\",\"nodeType\":1,\"layerid\":\"1\",\"attrs\":{\"d\":\"M 4002.49 2996.53 L 4001.2451 2998.03 L 3999.3676 2998.03 L 3997.49 2998.03 L 3997.49 2999.471 C 3997.49 3000.2635 3997.9693 3001.2082 3998.5551 3001.5703 L 3999.6203 3002.2286 L 3997.8946 3004.1354 L 3996.1689 3006.0423 L 3996.8233 3006.6967 L 3997.4777 3007.3511 L 3999.3405 3005.6653 L 4001.2032 3003.9795 L 4002.4599 3005.4938 L 4003.7166 3007.008 L 4004.6033 3006.46 C 4005.091 3006.1586 4005.49 3005.1083 4005.49 3004.126 L 4005.49 3002.34 L 4007.4981 3000.5227 L 4009.5062 2998.7054 L 4007.8431 2996.8677 C 4005.8255 2994.6383 4004.1478 2994.5324 4002.49 2996.53\",\"id\":\"gge65\",\"stroke\":\"none\",\"layerid\":\"1\"}}"
+数据格式：
+
+SVGNODE的格式由两部分组成，第一部分只有图元标识符”SVGNODE”，第二部分为形状的组成数据，数据格式为JSON数据字符串。
+
+内电层PLANEZONE
+示例：
+
+"PLANEZONE~21~GND~solid~planeL21B0#@$planeL21B0I0~M4342.5,3232 4342.5,3169 4420.5,3169 4420.5,3232zM4375.6222,3223.2077 4375.6314,3223.2077 4376.0759,3223.2015 4376.0852,3223.2012 4376.5294,3223.1869z"
+数据格式：
+
+压缩数据同其他图元一样会放到shape字段下，格式由两部分组成：
+
+内电层的基本信息：数据以分隔符~隔开。
+内电层路径数据：包含若干路径数据，数据以分隔符~隔开。
+两部分数据再以分隔符号#@$隔开。
+
+#1.[内电层基本信息]
+1.[cmdKey]：图元标识符，PLANEZONE
+2.[layerid]：所属层
+3.[net]：网络
+4.[fillStyle]：填充类型
+5.[gId]：元素id
+
+#2.[内电层路径数据]
+1.[gId]：路径元素id
+2.[pathStr]：路径数据
+封装FOOTPRINT
+pcbd的FOOTPRINT同原理图的schlib类似，即PCB库文件。库文件可以由其他图元组成，但不能由库本身组成库，pcb库只能放置在PCB中。
+
+在PCB中，FOOTPRINT压缩数据同其他图元一样会放到shape字段下，FOOTPRINT格式分为两部分组成：
+
+封装的头部数据：头部数据以分隔符~隔开。
+封装的内部图元数据：图元之间将会以分隔符#@$隔开。
+两部分数据再以分隔符号#@$隔开。
+
+示例：
+
+"LIB~4058.9147~3070~package`R0201`~~~gge929a3f9f08f43af9~1~b600ab0518154c0c9d2ed5ca96244c69~1565922186~0~#@$TEXT~N~4057.97~3060~0.6~0~~3~~4.5~1k~M 4057.97 3056.28 L 4058.38 3056.07 L 4058.99 3055.46 L 4058.99 3059.75 M 4060.34 3055.46 L 4060.34 3059.75 M 4062.39 3056.89 L 4060.34 3058.94 M 4061.16 3058.12 L 4062.59 3059.75~none~gge3~~0~#@$TEXT~P~4057.97~3067~0.6~0~~3~~4.5~R1~M 4057.97 3062.46 L 4057.97 3066.75 M 4057.97 3062.46 L 4059.81 3062.46 L 4060.42 3062.66 L 4060.63 3062.87 L 4060.83 3063.28 L 4060.83 3063.69 L 4060.63 3064.1 L 4060.42 3064.3 L 4059.81 3064.5 L 4057.97 3064.5 M 4059.4 3064.5 L 4060.83 3066.75 M 4062.18 3063.28 L 4062.59 3063.07 L 4063.21 3062.46 L 4063.21 3066.75~~gge5~~0~#@$TRACK~0.3937~3~~4056.5525 3068.5039 4058.521 3068.5039~gge7~0#@$TRACK~0.3937~3~~4056.5525 3068.5039 4056.5525 3071.4961~gge8~0#@$TRACK~0.3937~3~~4056.5525 3071.4961 4058.521 3071.4961~gge9~0#@$TRACK~0.3937~3~~4059.3084 3071.4961 4061.2769 3071.4961~gge10~0#@$TRACK~0.3937~3~~4061.2769 3068.5039 4061.2769 3071.4961~gge11~0#@$TRACK~0.3937~3~~4059.3084 3068.5039 4061.2769 3068.5039~gge12~0#@$PAD~RECT~4059.997~3070~1.1811~1.5748~1~R1_2~2~0~4059.4065 3069.2126 4060.5876 3069.2126 4060.5876 3070.7874 4059.4065 3070.7874~0~gge13~0~~Y~0~0~0.4~4059.9969,3070#@$PAD~RECT~4057.832~3070~1.1811~1.5748~1~R1_1~1~0~4057.2415 3069.2126 4058.4226 3069.2126 4058.4226 3070.7874 4057.2415 3070.7874~0~gge18~0~~Y~0~0~0.4~4057.8323,3070"
+数据结构：
+
+#1.[封装头部数据]
+1.[cmdKey]：图元标识符，LIB
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[c_para]：自定义属性
+5.[rotation]：旋转角度
+6.[importFlag：eagle导入标记
+7.[gId]：元素id
+8.[layerid]：所属层
+9.[uuid]：封装的uuid
+10.[utime]：更新时间
+11.[locked]：是否锁定
+12.[bind_sch_id]：绑定的原理图器件的id（弃用）
+
+#2.[封装内部图元数据]：即其他基本图元的压缩格式。
+图纸SHEET
+原理图的图纸是一种特殊的器件，PCB中的图纸也可以理解为特殊的封装，但PCB使用的单独的图元来表示PCB图纸，所以图纸的结构也同封装结构一致，分为两部分：
+
+图纸的头部数据：头部数据以分隔符~隔开。
+图纸的内部图元数据：图元之间将会以分隔符#@$隔开。
+两部分数据再以分隔符号#@$隔开。
+
+数据格式：
+
+#1.[图纸头部数据]
+1.[cmdKey]：图元标识符，SHEET
+2.[x]：横坐标
+3.[y]：纵坐标
+4.[locked]：是否锁定
+5.[layerid]：所属层
+6.[gId]：元素id
+
+#2.[图纸内部图元数据]：即其他基本图元的压缩格式。
+原理图文件格式
+一个原理图可以包含多个图页，每个图页都可以作为一份独立原理图文档，所以这里的原理图可以理解为原理图工程，可以包含若干原理图页，在压缩格式中使用schematics字段来标识改工程下的所有原理图页，类型为JSON数组。
+
+示例如下：
+
+{
+  "editorVersion": "6.3.0",		// 版本号
+  "docType": "5",				// 文档类型
+  "title": "New Project",		// 文档标题
+  "description": "",			// 文档描述
+  "colors": {},					// 文档颜色配置（弃用）
+  "schematics": [
+    {
+      "docType": "1",
+      "title": "Sheet_1",
+      "description": "",
+      "dataStr": "{\"head\":{\"docType\":\"1\",\"editorVersion\":\"6.3.0\",\"newgId\":true,\"c_para\":{\"Prefix Start\":\"1\"},\"c_spiceCmd\":null},\"canvas\":\"CA~1000~1000~#FFFFFF~yes~#CCCCCC~5~1000~1000~line~5~pixel~5~0~0\",\"shape\":[\"LIB~0~-5~package`RES-ADJ-TH_3386P`BOM_Supplier Part``BOM_Supplier`LCSC`BOM_Manufacturer Part``nameAlias`Value`Contributor`LCEDA_Lib`BOM_value(Ω)`10K`spicePre`R`spiceSymbolName`R_3386P_US`~~0~gge348eb5222b2937f0~ce6e0cc9b0684cd986edbf86d7075dfd~e0b0d01b6e0d44dbab9db0ad79a427bc~0~~yes~yes#@$T~N~-9.15625~15.34375~0~#000080~Arial~~~~~comment~R_3386P_US~1~start~gge103~0~#@$T~P~-9.15625~7~0~#000080~Arial~~~~~comment~RP1~1~start~gge105~0~#@$P~show~0~2~0~-25~90~gge107~0^^0~-25^^M 0 -25 v 10~#880000^^0~3~-13~270~2~end~~~#0000FF^^0~-1~-20~270~2~start~~~#0000FF^^0~0~-18^^0~M -3 -15 L 0 -12 L 3 -15#@$E~11~-8~1~1~#A00000~1~0~none~gge114~0#@$PG~-2 -15 0 -11 2 -15~#880000~1~0~none~gge115~0#@$P~show~0~1~20~-5~0~gge116~0^^20~-5^^M 20 -5 h -10~#8D2323^^0~7~-2~0~1~end~~~#8D2323^^0~14~-6~0~1~start~~~#8D2323^^0~13~-5^^0~M 10 -8 L 7 -5 L 10 -2#@$P~show~0~3~-20~-5~180~gge123~0^^-20~-5^^M -20 -5 h 10~#8D2323^^0~-6~-2~0~3~start~~~#8D2323^^0~-14~-6~0~3~end~~~#8D2323^^0~-13~-5^^0~M -10 -2 L -7 -5 L -10 -8#@$PL~0 -15 0 -11~#880000~1~0~none~gge130~0#@$PL~9 -1 10 -5~#8D2323~1~0~none~gge131~0#@$PL~6 -9 9 -1~#8D2323~1~0~none~gge132~0#@$PL~4 -1 6 -9~#8D2323~1~0~none~gge133~0#@$PL~1 -9 4 -1~#8D2323~1~0~none~gge134~0#@$PL~-1 -1 1 -9~#8D2323~1~0~none~gge135~0#@$PL~-3 -9 -1 -1~#8D2323~1~0~none~gge136~0#@$PL~-6 -1 -3 -9~#8D2323~1~0~none~gge137~0#@$PL~-8 -9 -6 -1~#8D2323~1~0~none~gge138~0#@$PL~-10 -5 -8 -9~#8D2323~1~0~none~gge139~0\"],\"BBox\":{\"x\":-22,\"y\":-27,\"width\":70.4,\"height\":43.7},\"colors\":{}}"
+    },
+    {
+      "docType": "1",
+      "title": "Sheet_2",
+      "description": "",
+      "dataStr": "{\"head\":{\"docType\":\"1\",\"editorVersion\":\"6.3.0\",\"newgId\":true,\"c_para\":{\"Prefix Start\":\"1\"},\"c_spiceCmd\":null},\"canvas\":\"CA~1000~1000~#FFFFFF~yes~#CCCCCC~5~1000~1000~line~5~pixel~5~0~0\",\"shape\":[\"F~part_netLabel_netPort~15~0~0~gge78~~0^^15~0^^netPort1~#0000FF~-6.5~5~0~end~1~Times New Roman~8pt~gge80^^PL~15 0 10 5 -5 5 -5 -5 10 -5 15 0~#0000FF~1~0~transparent~gge82~0\"],\"BBox\":{\"x\":-44,\"y\":-5,\"width\":61,\"height\":12.7},\"colors\":{}}"
+    }
+  ]
+}
+PCB文件格式
+PCB不像原理图一样包含多页，所以PCB的文件格式和PCB库无结构上的差异。
+
+示例：
+
+{
+  "head": {
+    "docType": "3",
+    "editorVersion": "6.3.0",
+    "newgId": true,
+    "c_para": {},
+    "hasIdFlag": true
+  },
+  "canvas": "CA~1000~1000~#000000~yes~#FFFFFF~10~1000~1000~line~0.5~mil~1~45~~0.5~4087.5~3308.5~0~yes",
+  "shape": [
+    "TRACK~1~1~~4076.5 3290.5 4076.5 3296.5 4115.5 3335.5~gge5~0",
+    "PAD~ELLIPSE~4095~3304.5~6~6~11~~1~1.8~~0~gge6~0~~Y~0~~~4095,3304.5"
+  ],
+  "layers": [
+    "1~TopLayer~#FF0000~true~true~true~",
+    "2~BottomLayer~#0000FF~true~false~true~",
+    "3~TopSilkLayer~#FFCC00~true~false~true~",
+    "4~BottomSilkLayer~#66CC33~true~false~true~",
+    "5~TopPasteMaskLayer~#808080~true~false~true~",
+    "6~BottomPasteMaskLayer~#800000~true~false~true~",
+    "7~TopSolderMaskLayer~#800080~true~false~true~0.3",
+    "8~BottomSolderMaskLayer~#AA00FF~true~false~true~0.3",
+  ],
+  "objects": [
+    "All~true~false",
+    "Component~true~true",
+    "Prefix~true~true",
+    "Name~true~false",
+    "Track~true~true",
+    "Pad~true~true",
+    "Via~true~true",
+    "Hole~true~true",
+    "Copper_Area~true~true",
+    "Circle~true~true",
+    "Arc~true~true",
+    "Solid_Region~true~true",
+    "Text~true~true",
+    "Image~true~true",
+    "Rect~true~true",
+    "Dimension~true~true",
+    "Protractor~true~true"
+  ],
+  "BBox": {
+    "x": 4076.5,
+    "y": 3290.5,
+    "width": 39,
+    "height": 45
+  },
+  "preference": {
+    "hideFootprints": "",
+    "hideNets": ""
+  },
+  "DRCRULE": {
+    "Default": {
+      "trackWidth": 1,
+      "clearance": 0.6,
+      "viaHoleDiameter": 2.4,
+      "viaHoleD": 1.2
+    },
+    "isRealtime": false,
+    "isDrcOnRoutingOrPlaceVia": false,
+    "checkObjectToCopperarea": true,
+    "showDRCRangeLine": true
+  },
+  "netColors": {}
+}
+
+
+目录
+EasyEDA API Plug
+Why Need API
+How to use API
+How to find the plug entrance
+Extensions Setting
+Scripts
+Run Script code
+EasyEDA API Plug
+Before reading this capture, please check EasyEDA Document Format first.
+
+Why Need API
+After route the PCB, you found out that you need to enlarge all tracks size a bit little, How?
+After route the PCB, you found out that all Vias’ hole size is too small, How to fix this?
+How to create a board outline using code?
+EasyEDA API will let you control your designs in an easy way.
+
+How to use API
+How to find the plug entrance
+You can click Config Icon > Extensions Setting on the top toolbar image as below.
+
+Extensions Setting
+You can enable or disable the default extensions, after enable, please reload the EasyEDA editor. We will give you a file about how to create an extensions soon.
+
+
+If you enable the Theme Colors Extension, you will find a button on the tool bar like bellow image:
+
+If you click the Black On White, you will find your schematic changes like bellow image, this is useful when you would like to print your design on a paper.
+
+
+You can check our github codes of this API via https://github.com/dillonHe/EasyEDA-Documents/tree/master/API/example/theme, check the manifest.json and main.js out, you will find out how to create an extension.
+
+How to install an extension
+
+Click the Load Extension button
+Click the select file button
+Select All the files.
+Type a name
+Click the load button.
+Close EasyEDA editor and open it again.
+
+Scripts
+If you just need some simple functions, you don’t need to create an extension. You just need to create a single Javascipt file and keep it in this list.
+
+You can select the Hello World, then click the Run button, the response as below image.
+You can select some items, then try Move Selected Objects.
+You can install your own scripts, then they will show on User Scripts.
+
+Run Script code
+In some case, you just need to run the function one time, such as create a user define board outline in codes, changing the Track width, change the hole size etc. You can use this way.
+
+example 1 Art
+You can open an empty schematic and copy this example javascript codes to the text box to run a test. After clicking the Run button, you will see bellow art image.
+
+
+testInsertShape();
+function testInsertShape(){
+	api('insertShape', [
+		{
+			shapeTypeName: "path",
+			fillColor: "none",
+			pathString: "M520 500 C480 460 550 430 480 410",
+			strokeColor: "#000000",
+			strokeStyle: 0,
+			strokeWidth: "1"
+		}
+	]);
+	api('insertShape', [
+		{
+			shapeTypeName: "path",
+			fillColor: "none",
+			pathString: shapeLotusFlower(500,550,3,80,40),
+			strokeColor: "#000000",
+			strokeStyle: 0,
+			strokeWidth: "1"
+		},
+		{
+			shapeTypeName: "path",
+			fillColor: "none",
+			pathString: shapeLotusFlower(700,500,6,70,30),
+			strokeColor: "#ff00ff",
+			strokeStyle: 0,
+			strokeWidth: "1"
+		},
+		{
+			shapeTypeName: "path",
+			fillColor: "none",
+			pathString: shapeFlower2(660,670,4, 14,-Math.PI/4, 63.246,-0.32175, 84.85,Math.PI/4),
+			strokeColor: "#cccc00",
+			strokeStyle: 0,
+			strokeWidth: "2"
+		}
+	]);
+}
+/** Lotus shape path */
+function shapeLotusFlower(cx,cy,n,r,r2){
+	var pathD = '', angle, angle2, x, y, x2, y2;
+	function p(x,y){
+		return (x+cx)+' '+(y+cy);
+	}
+	for(var i=0; i<n; i++){
+		angle = i * Math.PI / n;
+		angle2 = (i / n + 0.5) * Math.PI;
+		x = r * Math.cos(angle);
+		y = r * Math.sin(angle);
+		x2 = r2 * Math.cos(angle2);
+		y2 = r2 * Math.sin(angle2);
+		pathD += 'M'+p(x,y)
+			+'C'+p(x2,y2)+' '+p(-x2,-y2)+' '+p(-x,-y)
+			+'C'+p(x2,y2)+' '+p(-x2,-y2)+' '+p(x,y);
+	}
+	return pathD;
+}
+/** Petal shape path */
+function shapeFlower2(cx,cy,n,r1,a1,r2,a2,r3,a3){
+	var pathD = '', angle, angle2, angle3, angle4, x, y, x2, y2;
+	function p(r,thi){
+		return (r * Math.cos(thi) + cx)+' '+(r * Math.sin(thi) + cy);
+	}
+	function polar(r,thi){
+		return {r:r,thi:thi};
+	}
+	for(var i=0; i<n; i++){
+		angle = i>0 ? angle4 : a1 + i * 2 * Math.PI / n;
+		angle2 = a2 + i * 2 * Math.PI / n;
+		angle3 = a3 + i * 2 * Math.PI / n;
+		angle4 = a1 + (i+1) * 2 * Math.PI / n;
+		pathD += (i>0 ? '' : 'M'+p(r1,angle))
+			+'C'+p(r2,angle2)+' '+p(r3,angle3)+' '+p(r1,angle4);
+	}
+	return pathD;
+}
+example 2 Change track width and via hole size
+You can open a PCB and copy this example javascript codes to the text box to run a test. After that, All tracks will be 10mil.
+
+//you can get the EasyEDA json objects like https://gist.github.com/071d4680dcdbf6bf9dd6.git
+//try to pen a pcb, then run bellow codes.
+
+var json = api('getSource', {type: "json"}),
+	id;
+
+for(id in json.TRACK){
+	if(json.TRACK.hasOwnProperty(id)){
+		json.TRACK[id].strokeWidth = api('edit.unitConvert', {type:'mil2pixel',value:10}); // 10mil
+	}
+}
+
+for(id in json.VIA){
+	if(json.VIA.hasOwnProperty(id)){
+		json.VIA[id].holeR = api('edit.unitConvert', {type:'mil2pixel',value:10}); // 10mil
+	}
+}
+api('applySource', {source: json, createNew: true});
+
+目录
+坐标系统
+单位
+坐标系统
+EasyEDA’s editor is based SVG, SVG viewport,(Coordinates increase left-to-right and top-to-bottom, the same as EasyEDA ). But SVG’s origin is fixed at the left top corn, and EasyEDA’s origin can be modified at the any place.
+
+
+Be careful this, they are different from Cartesian coordinate system
+
+单位
+There are two kinds of unit in our editor, SVG Canvas unit and real world EasyEDA unit. SVG Canvas unit is Pixel. The real world EasyEDA unit in schematic is also Pixel, but in PCB, there are mm, mil and inch. We use bellow map to convert Canvas to real world.
+
+1 pixel = 10 mil
+1 pixel = 0.254mm
+1 pixel = 0.01inch
+There are API for these convert.
+
+mm2pixel: convert 10mm to pixel
+var result = api('unitConvert', {type:'mm2pixel',value:10});
+mil2pixel: convert 10mil to pixel
+var result = api('unitConvert', {type:'mil2pixel',value:10});
+There are other convert method, such as inch2pixel, pixel2mm, pixel2mil and pixel2inch.
+
+All EasyEDA’s value is based pixel, if you can keep in mind that 1 pixel equal 10mil or 0.254 mm, you don’t need to use any convert function.
+For example, if you want to change a Track to 20mil, so you just need to use 2.
+
+目录
+API List
+Get EasyEDA Source
+Apply Source
+Get Shape
+Delete Shapes
+Update Shape
+Create Shape
+UI
+Create Toolbar Button
+Create Extension Menu
+Create Dialog
+Command List
+Clone
+Delete
+Rotate
+Rotate Left
+Rotate Right
+Fliph
+Flipv
+Align Left
+Align Right
+Align Top
+Align Bottom
+Selection
+Select
+Select None
+Get Selected Ids
+Move
+Move Objects
+Move Objects To
+SetOriginXY
+Coordinate Convert
+Value Convert
+Get SVG Arc Path
+API List
+Get EasyEDA Source
+get EasyEDA JSON objects, type is json, you can check PCB Json object out to know more.
+
+var result = api('getSource', {type:'json'});
+get EasyEDA compress string, EasyEDA save this string to our database, it is a bit little hard to read and understand, but it is small in size. EasyEDA save this string to our database.
+
+var result = api('getSource', {type:'compress'});
+Get SVG string
+
+var result = api('getSource', {type:'svg'});
+Check the Get EasyEDA source example codes.
+
+Apply Source
+After you can use your codes to hack EasyEDA’s source, then you need to apply the source to EasyEDA’s editor. You can
+
+Apply as compress string
+//will open a new editor and convert compressStr to EasyEDA file.
+
+api('applySource', {source:'compressStr', createNew: true});
+Apply as Json object.
+//will modify the active file and convert json object to EasyEDA file.
+
+api('applySource', {source: json, createNew: !true});
+Check the Apply Source example codes.
+
+Get Shape
+If you want to get an EasyEDA json object by id, you can try to use bellow code.
+
+var obj = api('getShape', {id:'gge13'})
+Delete Shapes
+Removing shapes by follow code
+
+Update Shape
+If you want to modify an EasyEDA object, you can use this API.
+
+Change the net to GND and the shape to ELLIPSE:
+
+api('updateShape', {
+ 	"shapeType": "PAD",
+	"jsonCache": {
+	"gId": "gge5",
+	"net": "GND"
+	"shape": "ELLIPSE"
+});
+shapeType and gId are must provided.
+
+Schematic
+shapeType, schlib, rect, polyline, polygon, wire, bus, image, circle, ellipse, line, path, arc, annotation, junction, netlabel, busentry, arrowhead, noconnectflag, pin, netflag
+PCB
+shapeType, FOOTPRINT, TRACK, COPPERAREA, SOLIDREGION, RECT, CIRCLE, TEXT, ARC, DIMENSION, PAD, VIA, HOLE
+Create Shape
+If you want to create EasyEDA shape by codes, you can try. We will provide more information about this API soon, now we just provide examples. You will find out how to do.
+
+with shortUrl:
+@example
+
+api('createShape', {shapeType:'schlib', shortUrl:'nxlVIGgQO', from:'system', title:'556_DIL14', x:400, y:300});
+api('createShape', {shapeType:'FOOTPRINT', shortUrl:'RrkewO60i', from:'system', title:'ARDUINO_PRO_MINI', x:400, y:300});
+with jsonCache object:
+
+@example
+
+api('createShape', {
+  "shapeType": "PAD",
+  "jsonCache": {
+    "gId": "gge5",
+    "layerid": "11",
+    "shape": "ELLIPSE",
+    "x": 382,
+    "y": 208,
+    "net": "",
+    "width": 6,
+    "height": 6,
+    "number": "1",
+    "holeR": 1.8,
+    "pointArr": [],
+    "rotation": "0"
+  }
+});
+@example
+
+api('createShape', {
+    "shapeType": "polygon",
+    "stroke": "#000000",
+    "stroke-width": "1",
+    "stroke-style": "dashed",
+    "fill": "none",
+    "points": [
+        {"x": 390, "y": 580},
+        {"x": 450, "y": 450},
+        {"x": 520, "y": 580},
+        {"x": 610, "y": 490}
+    ]
+});
+@example
+
+api('createShape', {
+    "shapeType": "arrowhead",
+    "x": 300,
+    "y": 300,
+    "color": "#339933",
+    "size": "3",
+    "rotation": 0
+});
+@example
+
+var ts = ["no_connect_flag", "arrowhead", "busentry", "netLabel_GNd", "netLabel_GnD", "netLabel_gnD", "netLabel_Bar", "netLabel_VEE", "netLabel_-5V", "netLabel_+5V", "netLabel_VCC", "netLabel_volProbe", "netLabel_netPort", "netLabel_text", "pin", "annotation"];
+for(var i=0;i<ts.length;i++){
+    api('createShape', {
+        "shapeType": ts[i],
+        "x": 300 + i%5*50,
+        "y": 300 + (i/5|0)*50
+    });
+}
+with cached or pre-defined libs:
+@example
+
+api('createShape', {"shapeType": "pcblib", from:'GeneralPackages', title:'C0402', x:400, y:300});
+@example
+api('createShape', {"shapeType": "schlib", from:'EasyEDALibs', title:'HDR2X2', x:400, y:300});
+@example 4
+
+api('createShape', {
+    "shapeType": "schlib",
+    "gId": "gge6",
+    "head": {},
+    "itemOrder": [],
+    "annotation": {
+        "gge8": api('createShape', 'annotation', {}),
+        "gge9": api('createShape', 'annotation', {})
+    },
+    "pin": {
+        "gge11": api('createShape', 'pin', {}),
+        "gge14": api('createShape', 'pin', {})
+    },
+    "polyline": {
+        "gge10": api('createShape', 'polyline', {}),
+        "gge12": api('createShape', 'polyline', {})
+    }
+});
+@example 5
+
+api('createShape', {
+    "shapeType": "schlib",
+    "gId": "gge6",
+    "head": {},
+    "children": [
+        api('createShape', 'polyline', {}),
+        api('createShape', 'polyline', {}),
+        api('createShape', 'pin', {}),
+        api('createShape', 'pin', {}),
+        api('createShape', 'annotation', {}),
+        api('createShape', 'annotation', {})
+    ]
+});
+@example 6
+
+api('createShape', {
+    "shapeType": "schlib",
+    "gId": "gge6",
+    "head": {},
+    "children": api('createShape', [
+        ['polyline', {}],
+        ['polyline', {}],
+        ['pin', {}],
+        ['pin', {}],
+        ['annotation', {}],
+        ['annotation', {}]
+    ])
+});
+UI
+If you want to create an extension, not just a run one time script, maybe need toolbar button. You can check the example before you read.
+
+Create Toolbar Button
+@example create a button:
+
+api('createToolbarButton', {
+ icon:'extensions/theme/icon.svg',
+ title:'Theme Colors...',
+ fordoctype:'sch,schlib',
+ cmd:"extension-theme-setting"
+});
+@example toolbar with menu:
+
+api('createToolbarButton', {
+ icon:'extensions/theme/icon.svg',
+ title:'Theme Colors...',
+ fordoctype:'sch,schlib',
+ "menu" : [
+     {"text":"White on Black", "cmd":"extension-theme-WhiteOnBlack"},
+     {"text":"Black on White", "cmd":"extension-theme-BlackOnWhite"},
+     {"text":"Custom Colors...", "cmd":"extension-theme-setting"}
+ ]
+});
+Create Extension Menu
+@example
+
+api('createExtensionMenu', [
+ {
+     "text":"Theme Colors...",
+     "fordoctype": "sch,schlib",
+     "cmd": "extension-theme-white"
+ }
+]);
+Create Dialog
+check the example
+
+Command List
+Clone
+// clone gge2 gge3 and return their new ids.
+
+var newIds = api('clone', {ids:["gge2","gge3"]})
+Delete
+api('delete', {ids:["gge2","gge3"]});
+Rotate
+// rotate ids to 90 degree
+
+api('rotate', {ids:["gge2","gge3"],degree:90});
+Rotate Left
+//anticlockwise
+
+api('rotate_left', {ids:["gge2","gge3"]});
+Rotate Right
+//clockwise
+
+api('rotate_right', {ids:["gge2","gge3"]});
+Fliph
+api('fliph', {ids:["gge2","gge3"]});
+Flipv
+api('flipv', {ids:["gge2","gge3"]});
+Align Left
+api('align_left', {ids:["gge2","gge3"]});
+Align Right
+api('align_right', {ids:["gge2","gge3"]});
+Align Top
+api('align_top', {ids:["gge2","gge3"]});
+Align Bottom
+api('align_bottom', {ids:["gge2","gge3"]});
+Selection
+Change or get selection states of EasyEDA objects in editor.
+
+Select
+// gge2 and gge3 will be marked as selected.
+
+api('select', {ids:["gge2","gge3"]});
+Select None
+//no objects will be selected.
+
+api('selectNone');
+Get Selected Ids
+var ids = api('getSelectedIds');
+Move
+You can use Update Shape to change the shapes position, but the Move method is better in this case.
+
+Move Objects
+Move shapes in relative coordinates, like move the shapes in arrow keys.
+
+//Move gge2 and gge3 from left to right in 20pixel or 200mil step
+//from top to bottom in 20pixel or 200mil step.
+
+api('moveObjs', {objs:[{gId:"gge2"},{gId:"gge3"}], addX: 20, addY: 20});
+//Move gge2 and gge3 from right to left in 20pixel or 200mil step
+
+api('moveObjs', {objs:["gge2","gge3"], addX:-20});
+//Move selected objects from left to right in 20pixel or 200mil step
+
+api('moveObjs', {addX:20});
+Move Objects To
+How to move a VIA or junction to position {x:'10mil', y:'10mil'} ?, Move shapes to absolute coordinates.
+
+//Move gge2 and gge3 to Canvas postion 20,20, the real coordinates are dedpend the origin.
+
+api('moveObjsTo', {objs:[{gId:"gge2"},{gId:"gge3"}], x:20, y:20});
+//move gge2 and gge3 to 10mm, 10mm coordinates
+
+api('moveObjsTo', {objs:["gge2","gge3"], x: api('coordConvert', {type:'real2canvas',x: '10mm'}), y: api('coordConvert', {type:'real2canvas',y: '10mm'})});
+//Move selected objects to Canvas postion 20,20, the real coordinates are dedpend the origin.
+
+api('moveObjsTo', {x:20, y:20});
+It is very easy to understand to move a PAD, VIA, Junction to absolution coordinates. But what are the effects of moving TRACK, FOOTPRINT, netlabel to some where. Just try to play the codes, you will find out the regular pattern.
+
+SetOriginXY
+EasyEDA’s canvas origin is 0,0, you can’t change it. But the real coordinates can be mapped to any where.
+
+//set the real origin point to canvas x = 400, y = 300. X,Y is pixel all the time.
+
+var result = api('setOriginXY', {x:400,y:300});
+Coordinate Convert
+You can use mm or mil or inch as units, but when you apply the Parameters to SVG graph, you must use coordinate convert.
+
+//convert the canvas x 400 to real postion, the value is depent your units and origin point.
+
+var result = api('coordConvert', {type:'canvas2real',x:400})
+//the default units is your canvas units, but you can add a units like 300mm.
+//if your PCB’s units is mil, then you will get the canvas coordinate 400mil,300mm.
+
+var result = api('coordConvert', {type:'real2canvas',x:400,y:'300mm'});
+If you set the origin to 0,0. It is very easy to map the coordinate in your mind, you don’t need to use API to convert. the canvas coordinate 100,100 equal the real coordinate 1000mil, 1000mil or 1inch, 1inch or 393.7mm, 393.7mm
+
+Value Convert
+How to set the pad’s hole size to 20mm? How to set the Track width to 20mil?
+
+//the default units is your canvas units, but you can add a units like mm, mil, inch, even pixel.
+
+var result = api('valConvert', {type:'real2canvas',val:400});
+   result = api('valConvert', {type:'real2canvas',val:'400mm'})
+//convert the 400 pixel to real value, the value is depent your units , if the unit is mil, the result should be 4000
+
+result = api('valConvert', {type:'canvas2real',val:400})
+If you can keep in mind 1pixel in canvas equal 10mil, so you don’t need this API, you can do it in raw way. For example,
+If you want to update the track size to 20mil, you can do.
+
+api('updateShape', {
+ 	"shapeType": "TRACK",
+	"jsonCache": {
+ 	"gId": "gge5",
+ 	"strokeWidth": 2
+      }
+});
+Or
+
+api('updateShape', {
+ 	"shapeType": "TRACK",
+	"jsonCache": {
+ 	"gId": "gge5",
+ 	"strokeWidth":  api('valConvert', {type:'real2canvas',val:'20mil'})
+      }
+});
+Get SVG Arc Path
+SVG Arc path Parameter is very complex, We provide a API to convert human read ARC parameter to SVG path.
+
+var result = api('getSvgArcPathByCRA', {cx:0, cy:0, rx:90, ry:90, startAngle:0.1, endAngle:0.7, sweepFlag:1});
+result should be M89.55037487502231 8.985007498214534A90 90 0 0 1 68.83579685560396 57.97959185139219
+
+
+目录
+API范例
+API范例
+Check Github example
+
+Enjoy it, if you have any questions, do let us know.
+
+modifyTrackVia.js:
+
+
+//you can get the EasyEDA json objects like https://gist.github.com/071d4680dcdbf6bf9dd6.git
+//try to pen a pcb, then run bellow codes.
+
+var json = api('getSource', {type: "json"}),
+	id;
+
+for(id in json.TRACK){
+	if(json.TRACK.hasOwnProperty(id)){
+		json.TRACK[id].strokeWidth = api('edit.unitConvert', {type:'mil2pixel',value:10}); // 10mil
+	}
+}
+
+for(id in json.VIA){
+	if(json.VIA.hasOwnProperty(id)){
+		json.VIA[id].holeR = api('edit.unitConvert', {type:'mil2pixel',value:10}); // 10mil
+	}
+}
+api('applySource', {source: json, createNew: true});
+schematicShapes.js:
+
+testInsertShape();
+
+function testInsertShape(){
+	api('insertShape', [
+		{
+			shapeTypeName: "path",
+			fillColor: "none",
+			pathString: "M520 500 C480 460 550 430 480 410",
+			strokeColor: "#000000",
+			strokeStyle: 0,
+			strokeWidth: "1"
+		}
+	]);
+	api('insertShape', [
+		{
+			shapeTypeName: "path",
+			fillColor: "none",
+			pathString: shapeLotusFlower(500,550,3,80,40),
+			strokeColor: "#000000",
+			strokeStyle: 0,
+			strokeWidth: "1"
+		},
+		{
+			shapeTypeName: "path",
+			fillColor: "none",
+			pathString: shapeLotusFlower(700,500,6,70,30),
+			strokeColor: "#ff00ff",
+			strokeStyle: 0,
+			strokeWidth: "1"
+		},
+		{
+			shapeTypeName: "path",
+			fillColor: "none",
+			pathString: shapeFlower2(660,670,4, 14,-Math.PI/4, 63.246,-0.32175, 84.85,Math.PI/4),
+			strokeColor: "#cccc00",
+			strokeStyle: 0,
+			strokeWidth: "2"
+		}
+	]);
+}
+
+/** Lotus shape path */
+function shapeLotusFlower(cx,cy,n,r,r2){
+	var pathD = '', angle, angle2, x, y, x2, y2;
+	function p(x,y){
+		return (x+cx)+' '+(y+cy);
+	}
+	for(var i=0; i<n; i++){
+		angle = i * Math.PI / n;
+		angle2 = (i / n + 0.5) * Math.PI;
+		x = r * Math.cos(angle);
+		y = r * Math.sin(angle);
+		x2 = r2 * Math.cos(angle2);
+		y2 = r2 * Math.sin(angle2);
+		pathD += 'M'+p(x,y)
+			+'C'+p(x2,y2)+' '+p(-x2,-y2)+' '+p(-x,-y)
+			+'C'+p(x2,y2)+' '+p(-x2,-y2)+' '+p(x,y);
+	}
+	return pathD;
+}
+/** Petal shape path */
+function shapeFlower2(cx,cy,n,r1,a1,r2,a2,r3,a3){
+	var pathD = '', angle, angle2, angle3, angle4, x, y, x2, y2;
+	function p(r,thi){
+		return (r * Math.cos(thi) + cx)+' '+(r * Math.sin(thi) + cy);
+	}
+	function polar(r,thi){
+		return {r:r,thi:thi};
+	}
+	for(var i=0; i<n; i++){
+		angle = i>0 ? angle4 : a1 + i * 2 * Math.PI / n;
+		angle2 = a2 + i * 2 * Math.PI / n;
+		angle3 = a3 + i * 2 * Math.PI / n;
+		angle4 = a1 + (i+1) * 2 * Math.PI / n;
+		pathD += (i>0 ? '' : 'M'+p(r1,angle))
+			+'C'+p(r2,angle2)+' '+p(r3,angle3)+' '+p(r1,angle4);
+	}
+	return pathD;
+}
+link:
+https://docs.easyeda.com/en/DocumentFormat/EasyEDA-Format-Standard/index.html
+https://docs.easyeda.com/en/DocumentFormat/0-EasyEDA-File-Format-Index/index.html
+https://docs.easyeda.com/en/DocumentFormat/1-Common-Information/index.html
+https://docs.easyeda.com/en/DocumentFormat/2-EasyEDA-Schematic-File-Format/index.html
+https://docs.easyeda.com/en/DocumentFormat/3-EasyEDA-PCB-File-Format/index.html
+https://docs.easyeda.com/en/DocumentFormat/4-EasyEDA-Schematic-File-Object/index.html
+https://docs.easyeda.com/en/DocumentFormat/4-EasyEDA-Schematic-File-Object/index.html
+https://docs.easyeda.com/en/DocumentFormat/5-EasyEDA-PCB-File-Object/index.html
+https://docs.easyeda.com/en/API/1-How-to-Use-API/index.html
+https://raw.githubusercontent.com/dillonHe/EasyEDA-Documents/master/API/example/schematicShapes.js
+https://docs.easyeda.com/en/API/2-Coordinate-System-and-Unit/index.html
+https://en.wikipedia.org/wiki/SVG
+https://docs.easyeda.com/en/DocumentFormat/5-EasyEDA-PCB-File-Object/index.html
+https://docs.easyeda.com/en/DocumentFormat/3-EasyEDA-PCB-File-Format/index.html
+https://raw.githubusercontent.com/dillonHe/EasyEDA-Documents/master/API/example/modifyTrackVia.js
+https://docs.easyeda.com/en/API/3-API-List/index.html
+https://docs.easyeda.com/en/API/4-API-Examples/index.html
+https://github.com/dillonHe/EasyEDA-Documents/blob/master/API/example/theme/README.md
